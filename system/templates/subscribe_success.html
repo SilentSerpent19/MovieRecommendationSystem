@@ -1,0 +1,58 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<div class="subscribe-header">
+  <h1 class="cinema-title">Payment Successful! 🎉</h1>
+  <p class="cinema-subtitle">Welcome to the premium experience!</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card glass mb-4">
+      <div class="card-body text-center">
+        <div class="plan-icon mb-4">
+          <span style="font-size: 4rem;">✅</span>
+        </div>
+        <h3 class="plan-name mb-3 text-success">Subscription Activated</h3>
+        <p class="plan-desc mb-4">Your premium subscription has been successfully activated. You now have access to all premium features including unlimited recommendations, extended watchlists, mood-based recommendations, and exclusive curated content.</p>
+        
+        <div class="alert alert-success glass mb-4">
+          <h5>🎬 What's Next?</h5>
+          <ul class="list-unstyled mb-0">
+            <li>✨ Unlimited movie recommendations</li>
+            <li>📋 Extended watchlist capacity</li>
+            <li>🎯 Premium curated lists</li>
+            <li>🎭 Mood-based recommendations</li>
+            <li>📊 Advanced analytics</li>
+          </ul>
+        </div>
+        
+        <div class="alert alert-info glass mb-4">
+          <h6>📅 Subscription Details</h6>
+          <p class="mb-0">
+            {% if user_sub and user_sub.plan %}
+              Your <strong>{{ user_sub.plan.name }}</strong> subscription is now active.
+              {% if user_sub.plan.duration == 'monthly' %}
+                It will automatically renew monthly.
+              {% elif user_sub.plan.duration == 'yearly' %}
+                It will automatically renew yearly.
+              {% elif user_sub.plan.duration == 'lifetime' %}
+                This is a lifetime subscription - no renewals needed!
+              {% endif %}
+            {% endif %}
+          </p>
+        </div>
+        
+        <div class="d-flex justify-content-center gap-3">
+          <a href="{% url 'profile' %}" class="cinema-btn cinema-btn-primary">
+            <span style="font-size: 1.2rem;">👤</span> View Profile
+          </a>
+          <a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-secondary">
+            <span style="font-size: 1.2rem;">🎬</span> Start Exploring
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

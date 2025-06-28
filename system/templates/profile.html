@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.welcome-banner {
+  max-width: 520px;
+  margin: 2.5rem auto 2rem auto;
+  padding: 2.2rem 2rem 1.7rem 2rem;
+  background: linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%);
+  border-radius: 2rem;
+  box-shadow: 0 8px 40px 0 rgba(80,80,120,0.18);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(18px);
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  position: relative;
+  animation: welcomeFadeIn 1.1s cubic-bezier(.4,1.4,.6,1) 0.1s both;
+}
+@keyframes welcomeFadeIn {
+  0% { opacity: 0; transform: translateY(-30px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.welcome-emoji {
+  font-size: 2.7rem;
+  filter: drop-shadow(0 2px 8px #6366f1cc);
+  animation: emojiWave 1.2s 0.2s 1 both;
+}
+@keyframes emojiWave {
+  0% { transform: rotate(-10deg) scale(0.8); }
+  30% { transform: rotate(10deg) scale(1.1); }
+  60% { transform: rotate(-8deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.welcome-text {
+  color: #fff;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-shadow: 0 2px 12px #6366f1cc;
+  margin-bottom: 0.2rem;
+}
+.welcome-sub {
+  color: #e0e7ef;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-top: 0.2rem;
+}
+@media (max-width: 600px) {
+  .welcome-banner { padding: 1.2rem 1rem 1rem 1rem; }
+  .welcome-text { font-size: 1.3rem; }
+  .welcome-emoji { font-size: 2rem; }
+}
+</style>
+<div class="welcome-banner">
+  <span class="welcome-emoji">👋</span>
+  <div>
+    <div class="welcome-text">Welcome, {{ user.username }}!</div>
+    <div class="welcome-sub">Here's your cinephile journey.</div>
+  </div>
+</div>
+<div class="profile-header" style="margin-top:0;">
+  <h1 class="cinema-title" style="display:none;">Your Profile</h1>
+  <p class="cinema-subtitle" style="display:none;">Welcome, {{ user.username }}! Here's your cinephile journey.</p>
+</div>
+{% if messages %}
+  <ul class="messages cinema-alert">{% for message in messages %}<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>{% endfor %}</ul>
+{% endif %}
+<div class="profile-card glass">
+  <div class="profile-avatar">🎬</div>
+  <div class="profile-info">
+    <div class="profile-username">{{ user.username }}</div>
+    {% if user_sub and user_sub.active %}
+      <div class="profile-badge">{{ user_sub.plan.name }} <span class="badge-active">Active</span></div>
+      <div class="profile-expiry">Expires: {{ user_sub.expires_at|date:'Y-m-d H:i' }}</div>
+      <a href="{% url 'manage_payment_method' %}" class="cinema-btn cinema-btn-outline mt-2">Manage Payment Method</a>
+    {% else %}
+      <div class="profile-badge badge-inactive">No active subscription</div>
+      <a href="{% url 'subscribe' %}" class="cinema-btn cinema-btn-primary">Upgrade to Premium</a>
+    {% endif %}
+  </div>
+</div>
+<div class="profile-actions" style="margin-top:2rem;text-align:center;">
+  <a href="{% url 'edit_profile' %}" class="cinema-btn cinema-btn-primary" style="min-width:180px;">Edit Profile</a>
+</div>
+<a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-secondary mt-3">Back to Recommendations</a>
+{% endblock %} 

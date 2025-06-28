@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="subscribe-header">
+  <h1 class="cinema-title">Payment Cancelled ⏸️</h1>
+  <p class="cinema-subtitle">No worries, you can try again anytime!</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card glass mb-4">
+      <div class="card-body text-center">
+        <div class="plan-icon mb-4">
+          <span style="font-size: 4rem;">🔄</span>
+        </div>
+        <h3 class="plan-name mb-3 text-warning">Payment Not Completed</h3>
+        <p class="plan-desc mb-4">Your payment was cancelled and no charges were made to your account. You can continue using the free features or try subscribing again when you're ready.</p>
+        
+        <div class="alert alert-warning glass mb-4">
+          <h5>💡 Need Help?</h5>
+          <p class="mb-0">If you encountered any issues during payment, please check your PayPal account or contact our support team for assistance.</p>
+        </div>
+        
+        <div class="d-flex justify-content-center gap-3">
+          <a href="{% url 'subscribe' %}" class="cinema-btn cinema-btn-primary">
+            <span style="font-size: 1.2rem;">💳</span> Try Again
+          </a>
+          <a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-secondary">
+            <span style="font-size: 1.2rem;">🎬</span> Continue Browsing
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

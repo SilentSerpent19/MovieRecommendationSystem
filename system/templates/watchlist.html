@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Watchlist Hero Section -->
+<div class="watchlist-hero">
+  <div class="watchlist-hero-content">
+    <div class="watchlist-hero-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 class="watchlist-hero-title">Your Watchlist</h1>
+    <p class="watchlist-hero-subtitle">All the films you want to see, beautifully organized</p>
+    <div class="watchlist-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ watchlist|length }}</span>
+        <span class="stat-label">Movies</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-number">{{ watchlist|length|add:"0" }}</span>
+        <span class="stat-label">To Watch</span>
+      </div>
+    </div>
+    
+    <!-- Share Watchlist Button -->
+    {% if user_is_premium or user_is_pro %}
+      <div class="watchlist-share-section">
+        <a href="https://twitter.com/intent/tweet?text=Check+out+my+movie+watchlist!+{{ request.build_absolute_uri }}" target="_blank" class="share-watchlist-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M23 3C22.0424 3.67548 20.9821 4.19211 19.86 4.53C19.2577 3.83751 18.4573 3.34669 17.567 3.12393C16.6767 2.90116 15.7395 2.9572 14.8821 3.28445C14.0247 3.61169 13.2884 4.19445 12.773 4.95376C12.2575 5.71308 11.9877 6.62234 12 7.55V8.55C10.2426 8.58561 8.50127 8.19587 6.93101 7.42045C5.36074 6.64504 4.01032 5.50525 3 4.1C3 4.1 -1 13 8 17C5.94053 18.398 3.48716 19.099 1 19C10 24 21 19 21 7.5C20.9991 7.22145 20.9723 6.94359 20.92 6.67C21.9406 5.66349 22.6608 4.39271 23 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Share Watchlist</span>
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Messages Section -->
+{% if messages %}
+  <div class="watchlist-messages">
+    {% for message in messages %}
+      <div class="message-item {{ message.tags }}">
+        <div class="message-icon">
+          {% if message.tags == 'success' %}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.76488 14.1003 1.98232 16.07 2.85999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          {% elif message.tags == 'error' %}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          {% else %}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 16V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          {% endif %}
+        </div>
+        <div class="message-content">
+          <span>{{ message }}</span>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Watchlist Content -->
+<div class="watchlist-container">
+  {% if watchlist %}
+    <!-- Watchlist Actions -->
+    <div class="watchlist-actions">
+      <div class="watchlist-filters">
+        <button class="filter-btn active" data-filter="all" id="filterAllBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 12H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 18H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          All Movies
+        </button>
+        <button class="filter-btn" data-filter="recent" id="filterRecentBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Recently Added
+        </button>
+      </div>
+      <div class="watchlist-sort">
+        <select class="sort-select" id="sortSelect">
+          <option value="added">Added Date</option>
+          <option value="title">Title A-Z</option>
+          <option value="rating">Rating</option>
+          <option value="year">Year</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Watchlist Grid -->
+    <div class="watchlist-grid" id="watchlistGrid">
+      {% for item in watchlist %}
+        <div class="watchlist-movie-card glass"
+             data-title="{{ item.movie.title|lower }}"
+             data-rating="{{ item.movie.imdb_rating|default:0 }}"
+             data-year="{{ item.movie.year|default:'' }}"
+             data-added="{{ item.added_at|date:'Y-m-d H:i:s' }}">
+          <div class="movie-poster-container">
+            <div class="movie-poster">
+              <div class="movie-poster-placeholder">🎬</div>
+            </div>
+            
+            <!-- Movie Overlay -->
+            <div class="movie-overlay">
+              <div class="overlay-content">
+                <button class="overlay-btn play-btn" title="Watch Trailer">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="5,3 19,12 5,21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <a href="{% url 'remove_from_watchlist' item.movie.id %}" class="overlay-btn remove-btn" title="Remove from Watchlist">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Rating Badge -->
+            {% if item.movie.imdb_rating %}
+              <div class="rating-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+                </svg>
+                <span>{{ item.movie.imdb_rating }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="movie-info">
+            <div class="movie-header">
+              <h3 class="movie-title">{{ item.movie.title }}</h3>
+              <span class="movie-year">({{ item.movie.year }})</span>
+            </div>
+            
+            <div class="movie-meta">
+              {% if item.movie.genre %}
+                <span class="movie-genre">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  {{ item.movie.genre }}
+                </span>
+              {% endif %}
+              
+              {% if item.movie.runtime %}
+                <span class="movie-runtime">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  {{ item.movie.runtime }} min
+                </span>
+              {% endif %}
+            </div>
+
+            <div class="movie-actions">
+              <button class="action-btn primary-btn" title="Mark as Watched">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.76488 14.1003 1.98232 16.07 2.85999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Watched
+              </button>
+              <a href="{% url 'remove_from_watchlist' item.movie.id %}" class="action-btn danger-btn" title="Remove from Watchlist">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Remove
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Back to Recommendations -->
+    <div class="watchlist-footer">
+      <a href="{% url 'recommend' %}" class="back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 12H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to Recommendations
+      </a>
+    </div>
+
+  {% else %}
+    <!-- Empty State -->
+    <div class="watchlist-empty">
+      <div class="empty-icon">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3 class="empty-title">Your Watchlist is Empty</h3>
+      <p class="empty-description">Start building your movie collection by adding films you want to watch.</p>
+      <div class="empty-actions">
+        <a href="{% url 'recommend' %}" class="empty-btn primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Discover Movies
+        </a>
+        <a href="{% url 'curated_lists' %}" class="empty-btn secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 11H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 7H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Browse Curated Lists
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+// --- Watchlist Sorting & Filtering ---
+function parseDate(str) {
+  // Parse 'YYYY-MM-DD HH:MM:SS' to Date
+  const [date, time] = str.split(' ');
+  const [y, m, d] = date.split('-');
+  const [h, min, s] = time ? time.split(':') : [0,0,0];
+  return new Date(y, m-1, d, h, min, s);
+}
+
+function sortWatchlist(criteria) {
+  const grid = document.getElementById('watchlistGrid');
+  const cards = Array.from(grid.getElementsByClassName('watchlist-movie-card'));
+  cards.sort((a, b) => {
+    if (criteria === 'title') {
+      return a.dataset.title.localeCompare(b.dataset.title);
+    } else if (criteria === 'rating') {
+      return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+    } else if (criteria === 'year') {
+      return parseInt(b.dataset.year) - parseInt(a.dataset.year);
+    } else { // 'added'
+      return parseDate(b.dataset.added) - parseDate(a.dataset.added);
+    }
+  });
+  cards.forEach(card => grid.appendChild(card));
+}
+
+function filterWatchlist(filter) {
+  const now = new Date();
+  const grid = document.getElementById('watchlistGrid');
+  const cards = Array.from(grid.getElementsByClassName('watchlist-movie-card'));
+  cards.forEach(card => {
+    if (filter === 'recent') {
+      const added = parseDate(card.dataset.added);
+      // Show if added in last 7 days
+      card.style.display = (now - added) < 7*24*60*60*1000 ? '' : 'none';
+    } else {
+      card.style.display = '';
+    }
+  });
+}
+
+document.getElementById('sortSelect').addEventListener('change', function() {
+  sortWatchlist(this.value);
+});
+
+document.getElementById('filterAllBtn').addEventListener('click', function() {
+  filterWatchlist('all');
+  this.classList.add('active');
+  document.getElementById('filterRecentBtn').classList.remove('active');
+});
+document.getElementById('filterRecentBtn').addEventListener('click', function() {
+  filterWatchlist('recent');
+  this.classList.add('active');
+  document.getElementById('filterAllBtn').classList.remove('active');
+});
+
+// Initial sort
+sortWatchlist('added');
+</script>
+
+{% endblock %} 

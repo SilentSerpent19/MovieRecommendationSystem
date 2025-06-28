@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="payment-method-hero">
+  <h1 class="payment-method-title">Manage Payment Method</h1>
+  <p class="payment-method-subtitle">Update your card or payment details securely.</p>
+  <div class="payment-method-card glass">
+    <div class="payment-method-icon">
+      <svg width="56" height="56" fill="none" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" fill="#ffd700"/><rect x="2" y="8" width="20" height="3" fill="#23243c"/><rect x="6" y="16" width="4" height="2" rx="1" fill="#23243c"/></svg>
+    </div>
+    <div class="payment-method-info">
+      <p class="payment-method-desc"><strong>In production, this page will redirect you to your payment provider's secure portal to update your card or payment method.</strong></p>
+      <div class="payment-method-dev-box">
+        <div class="dev-title">For developers/testing:</div>
+        <ul>
+          <li>Never handle or store card details yourself.</li>
+          <li>For PayPal: Use PayPal's Vault or Billing Agreements API for card updates.</li>
+          <li>For Stripe: Use Stripe's customer portal or setup_intent/session for card updates.</li>
+          <li>In production, replace this page with a redirect to the provider's update URL.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="payment-method-actions">
+      <a href="{% url 'profile' %}" class="cinema-btn cinema-btn-secondary btn-lg">Back to Profile</a>
+    </div>
+  </div>
+</div>
+{% endblock %} 

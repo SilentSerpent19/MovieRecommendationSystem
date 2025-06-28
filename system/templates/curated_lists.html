@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="curated-hero">
+  <div class="curated-hero-content">
+    <div class="curated-hero-icon">
+      <svg width="64" height="64" fill="none" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" fill="#ffd700"/><rect x="2" y="8" width="20" height="3" fill="#23243c"/><rect x="6" y="16" width="4" height="2" rx="1" fill="#23243c"/></svg>
+    </div>
+    <h1 class="curated-hero-title">Curated Movie Lists</h1>
+    <p class="curated-hero-subtitle">Handpicked collections for every mood and moment.</p>
+  </div>
+</div>
+{% if messages %}
+  <ul class="messages cinema-alert">{% for message in messages %}<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>{% endfor %}</ul>
+{% endif %}
+<div class="curated-lists">
+  {% for clist in lists %}
+    <div class="curated-list glass">
+      <div class="curated-banner">
+        <h2 class="curated-title">{{ clist.title }}</h2>
+        <p class="curated-desc">{{ clist.description }}</p>
+      </div>
+      <div class="curated-movies-scroll">
+        <div class="curated-movies">
+          {% for movie in clist.movies.all %}
+            <div class="curated-movie-card glass" 
+                 data-title="{{ movie.title }}"
+                 data-year="{{ movie.year }}"
+                 data-genre="{{ movie.genre }}"
+                 data-director="{{ movie.director }}"
+                 data-actors="{{ movie.actors }}"
+                 data-rating="{{ movie.imdb_rating }}"
+                 data-runtime="{{ movie.runtime }}"
+                 data-streaming="{{ movie.streaming_platform }}"
+                 data-mood="{{ movie.mood.name|default:'' }}"
+                 data-id="{{ movie.id }}"
+                 onclick="showMovieModal(this)"
+                 onkeydown="if(event.key==='Enter'){showMovieModal(this);}"
+                 tabindex="0">
+                <div class="movie-poster">
+                  <div class="movie-poster-placeholder">🎬</div>
+                </div>
+              </div>
+          {% empty %}
+            <div class="no-recs curated-empty">
+              <div class="empty-icon">🎬</div>
+              <div class="empty-title">No movies in this list yet.</div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="scroll-indicator left"></div>
+        <div class="scroll-indicator right"></div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="no-recs curated-empty">
+      <div class="empty-icon">🎬</div>
+      <div class="empty-title">No curated lists available.</div>
+    </div>
+  {% endfor %}
+</div>
+<a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-secondary mt-3">Back to Recommendations</a>
+<script>
+function showMovieModal(card) {
+  const title = card.getAttribute('data-title');
+  const year = card.getAttribute('data-year');
+  const genre = card.getAttribute('data-genre');
+  const director = card.getAttribute('data-director');
+  const actors = card.getAttribute('data-actors');
+  const rating = card.getAttribute('data-rating');
+  const id = card.getAttribute('data-id');
+  let html = `<div style='text-align:center;'>`;
+  html += `<div class='movie-poster-placeholder' style='font-size:3rem;margin-bottom:1.2rem;'>🎬</div>`;
+  html += `<h2 style='color:#ffd700;font-size:1.5rem;font-weight:700;'>${title} <span style='color:#ffb347;font-size:1.1rem;'>(${year})</span></h2>`;
+  html += `<div style='margin:0.7rem 0 0.5rem 0;'><span style='color:#ffd700;font-weight:600;'>⭐ ${rating}</span></div>`;
+  html += `<div style='color:#f3f3f7;font-size:1.05rem;margin-bottom:0.5rem;'>${genre}</div>`;
+  html += `<div style='color:#b3e5fc;font-size:1.01rem;margin-bottom:0.5rem;'>Director: ${director}</div>`;
+  html += `<div style='color:#f3f3f7;font-size:0.98rem;margin-bottom:1rem;'>Cast: ${actors}</div>`;
+  html += `<div style='display:flex;gap:0.7rem;justify-content:center;'>`;
+  html += `<a href='/add_to_watchlist/${id}/' class='cinema-btn cinema-btn-primary' style='min-width:120px;'>Add to Watchlist</a>`;
+  html += `<a href='/remove_from_watchlist/${id}/' class='cinema-btn cinema-btn-danger' style='min-width:120px;'>Remove</a>`;
+  html += `</div>`;
+  html += `</div>`;
+  openMovieModal(html);
+}
+</script>
+{% endblock %} 

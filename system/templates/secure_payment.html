@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="subscribe-header">
+  <h1 class="cinema-title">Secure Payment</h1>
+  <p class="cinema-subtitle">Complete your subscription to {{ plan.name }}</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card glass mb-4">
+      <div class="card-body payment-form">
+        <!-- Plan Summary -->
+        <div class="text-center mb-4">
+          <div class="plan-icon mb-3">
+            <span style="font-size: 3rem;">💳</span>
+          </div>
+          <h3 class="plan-name mb-2">{{ plan.name }}</h3>
+          <p class="plan-desc mb-3">{{ plan.description }}</p>
+          <div class="plan-price">
+            <span class="h2 text-warning">${{ plan.price }}</span>
+            <span class="text-muted"> {{ plan.get_duration_display_text }}</span>
+          </div>
+          <div class="mt-2">
+            <small class="text-muted">
+              {% if plan.duration == 'monthly' %}
+                Your subscription will renew monthly
+              {% elif plan.duration == 'yearly' %}
+                Your subscription will renew yearly
+              {% elif plan.duration == 'lifetime' %}
+                This is a one-time payment for lifetime access
+              {% endif %}
+            </small>
+          </div>
+        </div>
+
+        <!-- Payment Form -->
+        <form id="payment-form" class="needs-validation" novalidate>
+          {% csrf_token %}
+          
+          <!-- Card Information -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="mb-3">💳 Card Information</h5>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="cardNumber" class="form-label">Card Number</label>
+              <div class="input-group">
+                <span class="input-group-text">🔢</span>
+                <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" required maxlength="19">
+                <div class="invalid-feedback">
+                  Please enter a valid card number.
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="expiryDate" class="form-label">Expiry Date</label>
+              <div class="input-group">
+                <span class="input-group-text">📅</span>
+                <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY" required maxlength="5">
+                <div class="invalid-feedback">
+                  Please enter a valid expiry date.
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="cvv" class="form-label">CVV</label>
+              <div class="input-group">
+                <span class="input-group-text">🔒</span>
+                <input type="text" class="form-control" id="cvv" placeholder="123" required maxlength="4">
+                <div class="invalid-feedback">
+                  Please enter a valid CVV.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Billing Information -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="mb-3">📋 Billing Information</h5>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="firstName" class="form-label">First Name</label>
+              <input type="text" class="form-control" id="firstName" placeholder="John" required>
+              <div class="invalid-feedback">
+                Please enter your first name.
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="lastName" class="form-label">Last Name</label>
+              <input type="text" class="form-control" id="lastName" placeholder="Doe" required>
+              <div class="invalid-feedback">
+                Please enter your last name.
+              </div>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="email" placeholder="john.doe@example.com" required>
+              <div class="invalid-feedback">
+                Please enter a valid email address.
+              </div>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="address" class="form-label">Billing Address</label>
+              <input type="text" class="form-control" id="address" placeholder="123 Main St" required>
+              <div class="invalid-feedback">
+                Please enter your billing address.
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="city" class="form-label">City</label>
+              <input type="text" class="form-control" id="city" placeholder="New York" required>
+              <div class="invalid-feedback">
+                Please enter your city.
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="state" class="form-label">State</label>
+              <input type="text" class="form-control" id="state" placeholder="NY" required>
+              <div class="invalid-feedback">
+                Please enter your state.
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="zipCode" class="form-label">ZIP Code</label>
+              <input type="text" class="form-control" id="zipCode" placeholder="10001" required>
+              <div class="invalid-feedback">
+                Please enter your ZIP code.
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Notice -->
+          <div class="alert alert-info glass mb-4">
+            <div class="d-flex align-items-center">
+              <span style="font-size: 1.5rem; margin-right: 10px;">🔒</span>
+              <div>
+                <strong>Secure Payment</strong><br>
+                Your payment information is encrypted and secure. We use industry-standard SSL encryption to protect your data.
+              </div>
+            </div>
+          </div>
+
+          <!-- Terms and Conditions -->
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="termsCheck" required>
+            <label class="form-check-label" for="termsCheck">
+              I agree to the <a href="#" class="text-warning" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of Service</a> and <a href="#" class="text-warning" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+            </label>
+            <div class="invalid-feedback">
+              You must agree before submitting.
+            </div>
+          </div>
+
+          <!-- Payment Button -->
+          <div class="d-grid">
+            <button type="submit" class="cinema-btn cinema-btn-primary btn-lg" id="payButton">
+              <span style="font-size: 1.2rem;">💳</span> 
+              {% if plan.duration == 'lifetime' %}
+                Pay ${{ plan.price }} for Lifetime Access
+              {% else %}
+                Pay ${{ plan.price }} {{ plan.get_duration_display_text }}
+              {% endif %}
+            </button>
+          </div>
+        </form>
+
+        <!-- Loading Spinner (Hidden by default) -->
+        <div id="loadingSpinner" class="text-center mt-4" style="display: none;">
+          <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">Processing payment...</span>
+          </div>
+          <p class="mt-2">Processing your payment securely...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="text-center">
+      <a href="{% url 'subscribe' %}" class="cinema-btn cinema-btn-secondary me-3">← Back to Plans</a>
+      <a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-outline">Continue Browsing</a>
+    </div>
+  </div>
+</div>
+
+<!-- Terms of Service Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h5 class="modal-title" id="termsModalLabel">Terms of Service</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+        <h6>1. Acceptance of Terms</h6>
+        <p>By subscribing to our service, you agree to abide by these Terms of Service. You must be at least 18 years old to use this service.</p>
+        <h6>2. Subscription Duration</h6>
+        <p>Your subscription duration depends on the plan you choose:
+        <ul>
+          <li><strong>Monthly:</strong> Billed monthly and automatically renews each month</li>
+          <li><strong>Yearly:</strong> Billed annually and automatically renews each year</li>
+          <li><strong>Lifetime:</strong> One-time payment for permanent access</li>
+        </ul>
+        </p>
+        <h6>3. Payment and Billing</h6>
+        <p>By providing your payment information, you authorize us to charge the subscription fee according to your chosen plan. You are responsible for keeping your payment information up to date. Failed payments may result in service suspension.</p>
+        <h6>4. Cancellation</h6>
+        <p>You may cancel your subscription at any time through your account settings. For monthly/yearly plans, access to premium features will continue until the end of your current billing period. Lifetime subscriptions are non-refundable.</p>
+        <h6>5. Refunds</h6>
+        <p>Refunds are provided according to our refund policy. Monthly and yearly subscriptions may be eligible for prorated refunds within 30 days. Lifetime subscriptions are non-refundable except as required by law.</p>
+        <h6>6. Changes to Service</h6>
+        <p>We reserve the right to modify or discontinue the service at any time. We will notify you of significant changes via email or through the service.</p>
+        <h6>7. Limitation of Liability</h6>
+        <p>We are not liable for any indirect, incidental, or consequential damages arising from your use of the service.</p>
+        <h6>8. Contact</h6>
+        <p>For questions about billing, cancellation, or these terms, contact support@example.com.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h5 class="modal-title" id="privacyModalLabel">Privacy Policy</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+        <h6>1. Data Collection</h6>
+        <p>We collect only the data necessary to provide our service, such as your email, payment information, and usage data.</p>
+        <h6>2. Data Usage</h6>
+        <p>Your data is used solely to provide and improve our service. We do not sell your personal data to third parties.</p>
+        <h6>3. Cookies</h6>
+        <p>We use cookies and analytics to enhance your experience and monitor service performance.</p>
+        <h6>4. Data Security</h6>
+        <p>We use industry-standard security measures to protect your data. However, no method of transmission is 100% secure.</p>
+        <h6>5. Your Rights</h6>
+        <p>You may request access to or deletion of your data at any time by contacting support@example.com.</p>
+        <h6>6. Changes</h6>
+        <p>We may update this policy. Significant changes will be communicated to you.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('payment-form');
+    const payButton = document.getElementById('payButton');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    // Card number formatting
+    const cardNumber = document.getElementById('cardNumber');
+    cardNumber.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formattedValue;
+    });
+    
+    // Expiry date formatting
+    const expiryDate = document.getElementById('expiryDate');
+    expiryDate.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+            value = value.substring(0, 2) + '/' + value.substring(2, 4);
+        }
+        e.target.value = value;
+    });
+    
+    // CVV formatting
+    const cvv = document.getElementById('cvv');
+    cvv.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+    
+    // ZIP code formatting
+    const zipCode = document.getElementById('zipCode');
+    zipCode.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!form.checkValidity()) {
+            e.stopPropagation();
+            form.classList.add('was-validated');
+            return;
+        }
+        
+        // Show loading spinner
+        payButton.style.display = 'none';
+        loadingSpinner.style.display = 'block';
+        
+        // Prepare payment data
+        const paymentData = {
+            plan_id: {{ plan.id }},
+            card_number: cardNumber.value.replace(/\s/g, ''),
+            expiry_date: expiryDate.value,
+            cvv: cvv.value,
+            first_name: document.getElementById('firstName').value,
+            last_name: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            address: document.getElementById('address').value,
+            city: document.getElementById('city').value,
+            state: document.getElementById('state').value,
+            zip_code: document.getElementById('zipCode').value
+        };
+        
+        // Send payment request
+        fetch('{% url "process_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(paymentData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Payment failed: ' + data.message);
+                payButton.style.display = 'block';
+                loadingSpinner.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing your payment. Please try again.');
+            payButton.style.display = 'block';
+            loadingSpinner.style.display = 'none';
+        });
+    });
+});
+</script>
+{% endblock %} 

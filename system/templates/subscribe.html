@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="subscribe-header">
+  <h1 class="cinema-title">Choose a Subscription Plan</h1>
+  <p class="cinema-subtitle">Unlock premium features and support your favorite movie app.</p>
+</div>
+
+{% if messages %}
+  <ul class="messages cinema-alert">{% for message in messages %}<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>{% endfor %}</ul>
+{% endif %}
+{% if user_sub and user_sub.active %}
+  <div class="subscribe-current">Your current plan: <strong>{{ user_sub.plan.name }}</strong></div>
+{% endif %}
+<div class="row justify-content-center g-4">
+  {% for plan in plans %}
+    <div class="col-md-4 d-flex align-items-stretch">
+      <div class="card plan-box glass w-100 d-flex flex-column h-100">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title text-center mb-2">{{ plan.name }}</h5>
+          <p class="card-text text-center mb-3">{{ plan.description }}</p>
+          <div class="text-center mb-2">
+            <span class="h3 text-warning">${{ plan.price }}</span>
+            <span class="text-muted"> {{ plan.get_duration_display_text }}</span>
+          </div>
+          <div class="mb-3 text-center">
+            <small class="text-muted">
+              {% if plan.duration == 'monthly' %}
+                Monthly: Billed monthly and automatically renews each month
+              {% elif plan.duration == 'yearly' %}
+                Yearly: Billed annually and automatically renews each year
+              {% elif plan.duration == 'lifetime' %}
+                Lifetime: One-time payment for permanent access
+              {% endif %}
+            </small>
+          </div>
+          <div class="mt-auto d-grid gap-2">
+            {% if plan.price == 0 or plan.name|lower == 'basic' %}
+              <form method="post" action="" class="d-grid">
+                {% csrf_token %}
+                <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                <button type="submit" class="btn btn-success">
+                  <span style="font-size: 1.1rem;">✅</span> Select Basic
+                </button>
+              </form>
+            {% else %}
+              <a href="{% url 'secure_payment' plan.id %}" class="btn btn-primary">
+                <span style="font-size: 1.1rem;">💳</span> Pay Securely
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="plan-features-table glass mb-5 mt-5">
+  <h4 class="text-center mb-3" style="color:#ffd700;">Compare Plans</h4>
+  <div class="table-responsive">
+    <table class="compare-plans-table table table-borderless text-center align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="text-start"></th>
+          <th>Basic</th>
+          <th>Premium</th>
+          <th>Pro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-start">Smart Recommendations</td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+        </tr>
+        <tr>
+          <td class="text-start">Personal Watchlist</td>
+          <td>Up to 5</td>
+          <td>Unlimited</td>
+          <td>Unlimited</td>
+        </tr>
+        <tr>
+          <td class="text-start">Curated Lists</td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+        </tr>
+        <tr>
+          <td class="text-start">Movie Analytics</td>
+          <td><span class="crossmark">❌</span></td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+        </tr>
+        <tr>
+          <td class="text-start">Mood-based Recommendations <span class="plan-badge">Premium</span></td>
+          <td><span class="crossmark">❌</span></td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+        </tr>
+        <tr>
+          <td class="text-start">Priority Support</td>
+          <td><span class="crossmark">❌</span></td>
+          <td><span class="checkmark">✅</span></td>
+          <td><span class="checkmark">✅</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

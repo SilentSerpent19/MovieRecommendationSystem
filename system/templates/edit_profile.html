@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.edit-profile-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #23243c 0%, #3a3b5a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+.edit-profile-card {
+  background: rgba(255,255,255,0.13);
+  border-radius: 2rem;
+  box-shadow: 0 8px 40px 0 rgba(80,80,120,0.18);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(18px);
+  max-width: 420px;
+  width: 100%;
+  padding: 2.5rem 2rem 2rem 2rem;
+  margin: 2rem auto;
+  position: relative;
+}
+.edit-profile-form .form-group {
+  position: relative;
+  margin-bottom: 2.1rem;
+}
+.edit-profile-form .form-group label {
+  position: absolute;
+  top: 1.1rem;
+  left: 3.2rem;
+  font-size: 1.04rem;
+  color: #c7d2fe;
+  pointer-events: none;
+  transition: 0.2s;
+  background: transparent;
+  z-index: 2;
+}
+.edit-profile-form .form-control {
+  width: 100%;
+  padding: 1.1rem 1.1rem 1.1rem 3rem;
+  font-size: 1.13rem;
+  border-radius: 1.2rem;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  box-shadow: 0 4px 24px 0 rgba(80,80,120,0.08);
+  transition: border 0.2s, box-shadow 0.2s;
+  outline: none;
+  position: relative;
+  z-index: 1;
+}
+.edit-profile-form .form-control:focus {
+  border: 1.5px solid #a5b4fc;
+  background: rgba(255,255,255,0.22);
+  box-shadow: 0 0 0 2px #6366f1, 0 4px 24px 0 rgba(80,80,120,0.10);
+  color: #fff;
+}
+.edit-profile-form .form-control::placeholder {
+  color: transparent;
+}
+.edit-profile-form .form-control:focus + label,
+.edit-profile-form .form-control:not(:placeholder-shown) + label {
+  top: -0.9rem;
+  left: 2.7rem;
+  font-size: 0.98rem;
+  color: #a5b4fc;
+  background: rgba(35,36,60,0.95);
+  padding: 0 0.4rem;
+  border-radius: 0.5rem;
+}
+.edit-profile-form .input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a5b4fc;
+  font-size: 1.25rem;
+  z-index: 3;
+  pointer-events: none;
+}
+.edit-profile-form .cinema-alert-warning {
+  margin-bottom: 0.5rem;
+}
+.edit-profile-form button.cinema-btn-primary {
+  font-size: 1.1rem;
+  padding: 1rem 0;
+  border-radius: 1.2rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10);
+}
+.edit-profile-form a.cinema-btn-secondary {
+  margin-top: 0.5rem;
+  border-radius: 1.2rem;
+}
+@media (max-width: 600px) {
+  .edit-profile-card { padding: 1.2rem; }
+  .edit-profile-form .form-control { font-size: 1rem; padding: 0.9rem 1rem 0.9rem 2.7rem; }
+}
+</style>
+<div class="edit-profile-bg">
+  <div class="edit-profile-card glass">
+    <div class="auth-header" style="text-align:center; margin-bottom:1.5rem;">
+      <h1 class="cinema-title" style="font-size:2rem;">Edit Profile</h1>
+      <p class="cinema-subtitle">Update your credentials securely.</p>
+    </div>
+    <form method="post" novalidate class="edit-profile-form">
+      {% csrf_token %}
+      {% if messages %}
+        <div class="register-messages">
+          {% for message in messages %}
+            <div class="message-item {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <div class="form-group">
+        <span class="input-icon">🔒</span>
+        {{ form.current_password }}
+        <label for="id_current_password">Current Password</label>
+        {% for error in form.current_password.errors %}<div class="cinema-alert cinema-alert-warning">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        <span class="input-icon">👤</span>
+        {{ form.username }}
+        <label for="id_username">Username</label>
+        {% for error in form.username.errors %}<div class="cinema-alert cinema-alert-warning">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        <span class="input-icon">📧</span>
+        {{ form.email }}
+        <label for="id_email">Email</label>
+        {% for error in form.email.errors %}<div class="cinema-alert cinema-alert-warning">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        <span class="input-icon">🔑</span>
+        {{ form.new_password1 }}
+        <label for="id_new_password1">New Password</label>
+        {% for error in form.new_password1.errors %}<div class="cinema-alert cinema-alert-warning">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        <span class="input-icon">🔑</span>
+        {{ form.new_password2 }}
+        <label for="id_new_password2">Confirm New Password</label>
+        {% for error in form.new_password2.errors %}<div class="cinema-alert cinema-alert-warning">{{ error }}</div>{% endfor %}
+      </div>
+      {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}<div class="cinema-alert cinema-alert-warning">{{ error }}</div>{% endfor %}
+      {% endif %}
+      <button type="submit" class="cinema-btn cinema-btn-primary" style="width:100%;">Update Profile</button>
+      <a href="{% url 'profile' %}" class="cinema-btn cinema-btn-secondary" style="width:100%;">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="subscribe-header">
+  <h1 class="cinema-title">Complete Your Payment</h1>
+  <p class="cinema-subtitle">You're about to subscribe to {{ plan.name }} for ${{ plan.price }}</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card glass mb-4">
+      <div class="card-body text-center">
+        <div class="plan-icon mb-3">
+          <span style="font-size: 3rem;">💳</span>
+        </div>
+        <h3 class="plan-name mb-3">{{ plan.name }}</h3>
+        <p class="plan-desc mb-4">{{ plan.description }}</p>
+        <div class="plan-price mb-4">
+          <span class="h2 text-warning">${{ plan.price }}</span>
+        </div>
+        
+        <form action="{{ form.get_endpoint }}" method="post" class="d-inline">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="cinema-btn cinema-btn-primary">
+            <span style="font-size: 1.2rem;">💳</span> Pay with PayPal
+          </button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="text-center">
+      <a href="{% url 'subscribe' %}" class="cinema-btn cinema-btn-secondary me-3">← Back to Plans</a>
+      <a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-outline">Continue Browsing</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

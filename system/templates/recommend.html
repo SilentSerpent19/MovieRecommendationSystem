@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="recommend-header">
+  <h1 class="cinema-title">Find Your Next Favorite Film</h1>
+  <p class="cinema-subtitle">Curated picks for true cinephiles. Filter by genre, era, rating, and mood.</p>
+</div>
+
+<div class="recommendation-container">
+  <div class="filter-section glass">
+    <div class="filter-header">
+      <div class="filter-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Refine Your Search</h2>
+      <p>Customize your preferences to get the most relevant recommendations</p>
+    </div>
+
+    <form method="post" class="filter-form">
+      {% csrf_token %}
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label for="id_genre" class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 15L16 10L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Genre
+          </label>
+          <select name="genre" id="id_genre" class="filter-select">
+            {% for value, label in form.genre.field.choices %}
+              {% if value == '' %}
+                <option value="" {% if form.genre.value == '' %}selected{% endif %}>Any Genre</option>
+              {% else %}
+                <option value="{{ value }}" {% if form.genre.value == value %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="id_era" class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Era
+          </label>
+          {{ form.era|add_class:'filter-select' }}
+        </div>
+
+        <div class="filter-group">
+          <label for="id_rating" class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/>
+            </svg>
+            IMDb Rating
+          </label>
+          {{ form.rating|add_class:'filter-select' }}
+        </div>
+
+        {% if user_is_premium or user_is_pro %}
+        <div class="filter-group">
+          <label for="id_mood" class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Mood
+          </label>
+          {{ form.mood|add_class:'filter-select' }}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="search-btn">
+          <span class="btn-content">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Find Movies
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {% if messages %}
+    <div class="recommend-messages">
+      {% for message in messages %}
+        <div class="message-item {% if message.tags %}{{ message.tags }}{% endif %}">
+          <div class="message-icon">
+            {% if message.tags == 'success' %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 11.08V12A10 10 0 1 1 5.68 3.57" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            {% elif message.tags == 'error' %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            {% else %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            {% endif %}
+          </div>
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if recommendations %}
+    <div class="results-section">
+      <div class="results-header">
+        <div class="results-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="10 9 9 9 8 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="results-info">
+            <h2>Your Recommendations</h2>
+            <p>{{ recommendations|length }} movies found based on your preferences</p>
+            {% if recommendations|length == 1 %}
+              <div class="cinema-alert cinema-alert-warning" style="margin-top:1rem;">Only one movie found for your filters. Try broadening your search!</div>
+            {% endif %}
+          </div>
+        </div>
+        {% if fallback_used %}
+          <div class="fallback-notice">
+            <div class="fallback-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.29 3.86L1.82 18A2 2 0 0 0 3.54 21H20.46A2 2 0 0 0 22.18 18L13.71 3.86A2 2 0 0 0 10.29 3.86Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="fallback-content">
+              <h6>Showing Similar Options</h6>
+              <p>No exact matches found. Here are the closest alternatives based on your preferences.</p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <script type="application/json" id="recommendations-data">{{ recommendations_json|safe }}</script>
+    <script>
+    // Modal navigation for recommendations
+    const recommendations = JSON.parse(document.getElementById('recommendations-data').textContent);
+    let currentRecIndex = 0;
+    
+    // Store current form data for next set requests
+    const currentFormData = {
+        genre: '{{ genre }}',
+        era: '{{ era }}',
+        rating: '{{ rating }}',
+        mood: '{{ mood }}',
+        current_index: {{ current_index|default:0 }}
+    };
+    
+    function renderMovieModal(idx) {
+      const m = recommendations[idx];
+      let html = `<div style='text-align:center;'>`;
+      html += `<div class='movie-poster-placeholder' style='font-size:3rem;margin-bottom:1.2rem;'>🎬</div>`;
+      html += `<h2 style='color:#ffd700;font-size:1.5rem;font-weight:700;'>${m.title} <span style='color:#ffb347;font-size:1.1rem;'>(${m.year})</span></h2>`;
+      html += `<div style='margin:0.7rem 0 0.5rem 0;'><span style='color:#ffd700;font-weight:600;'>⭐ ${m.rating}</span></div>`;
+      html += `<div style='color:#f3f3f7;font-size:1.05rem;margin-bottom:0.5rem;'>${m.genre}</div>`;
+      html += `<div style='color:#b3e5fc;font-size:1.01rem;margin-bottom:0.5rem;'>Director: ${m.director}</div>`;
+      html += `<div style='color:#f3f3f7;font-size:0.98rem;margin-bottom:1rem;'>Cast: ${m.actors}</div>`;
+      html += `<div style='display:flex;gap:0.7rem;justify-content:center;margin-bottom:1.2rem;'>`;
+      html += `<a href='/watchlist/add/${m.id}/' class='cinema-btn cinema-btn-primary' style='min-width:120px;'>Add to Watchlist</a>`;
+      html += `</div>`;
+      html += `<button class='cinema-btn cinema-btn-secondary' style='min-width:120px;' onclick='nextRecMovie()'>Next</button>`;
+      html += `</div>`;
+      openMovieModal(html);
+    }
+    
+    function nextRecMovie() {
+      // Call the backend to get the next recommendation set
+      fetch('/recommend/next-set/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(currentFormData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          const movie = data.movie;
+          // Update the current index
+          currentFormData.current_index = movie.current_index;
+          
+          // Render the new movie in the modal
+          let html = `<div style='text-align:center;'>`;
+          html += `<div class='movie-poster-placeholder' style='font-size:3rem;margin-bottom:1.2rem;'>🎬</div>`;
+          html += `<h2 style='color:#ffd700;font-size:1.5rem;font-weight:700;'>${movie.title} <span style='color:#ffb347;font-size:1.1rem;'>(${movie.year})</span></h2>`;
+          html += `<div style='margin:0.7rem 0 0.5rem 0;'><span style='color:#ffd700;font-weight:600;'>⭐ ${movie.rating}</span></div>`;
+          html += `<div style='color:#f3f3f7;font-size:1.05rem;margin-bottom:0.5rem;'>${movie.genre}</div>`;
+          html += `<div style='color:#b3e5fc;font-size:1.01rem;margin-bottom:0.5rem;'>Director: ${movie.director}</div>`;
+          html += `<div style='color:#f3f3f7;font-size:0.98rem;margin-bottom:1rem;'>Cast: ${movie.actors}</div>`;
+          html += `<div style='display:flex;gap:0.7rem;justify-content:center;margin-bottom:1.2rem;'>`;
+          html += `<a href='/watchlist/add/${movie.id}/' class='cinema-btn cinema-btn-primary' style='min-width:120px;'>Add to Watchlist</a>`;
+          html += `</div>`;
+          html += `<button class='cinema-btn cinema-btn-secondary' style='min-width:120px;' onclick='nextRecMovie()'>Next</button>`;
+          html += `</div>`;
+          
+          // Update modal content
+          document.getElementById('movieModalContent').innerHTML = html;
+        } else {
+          // Show error message
+          alert('No more recommendations available. Try different filters!');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading next recommendation. Please try again.');
+      });
+    }
+    
+    // Auto-open modal on page load if recommendations exist
+    if (recommendations.length > 0) {
+      window.addEventListener('DOMContentLoaded', function() {
+        renderMovieModal(0);
+      });
+    }
+    </script>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3>Ready to Discover?</h3>
+      <p>Use the filters above to find your next favorite movie. We'll curate a personalized selection just for you.</p>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+// Mood-based genre highlighting
+const moodGenreMap = {{ mood_genre_map|safe }};
+const selectedMood = '{{ selected_mood|lower }}';
+
+function highlightMoodGenres() {
+  if (selectedMood && moodGenreMap[selectedMood]) {
+    const genreSelect = document.getElementById('id_genre');
+    const moodGenres = moodGenreMap[selectedMood];
+    
+    Array.from(genreSelect.options).forEach(option => {
+      if (moodGenres.includes(option.value)) {
+        option.style.background = '#fffbe6';
+        option.style.color = '#ffb347';
+        option.style.fontWeight = 'bold';
+        option.textContent += ' ⭐';
+      }
+    });
+  }
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', highlightMoodGenres);
+
+// Run when mood changes
+document.getElementById('id_mood')?.addEventListener('change', function() {
+  // Reset all options
+  const genreSelect = document.getElementById('id_genre');
+  Array.from(genreSelect.options).forEach(option => {
+    option.style.background = '';
+    option.style.color = '';
+    option.style.fontWeight = '';
+    option.textContent = option.textContent.replace(' ⭐', '');
+  });
+  
+  // Highlight new mood genres
+  const newMood = this.value.toLowerCase();
+  if (newMood && moodGenreMap[newMood]) {
+    const moodGenres = moodGenreMap[newMood];
+    Array.from(genreSelect.options).forEach(option => {
+      if (moodGenres.includes(option.value)) {
+        option.style.background = '#fffbe6';
+        option.style.color = '#ffb347';
+        option.style.fontWeight = 'bold';
+        option.textContent += ' ⭐';
+      }
+    });
+  }
+});
+</script>
+{% endblock %} 
