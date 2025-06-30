@@ -19,8 +19,6 @@ def register(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Create employee profile
-            Employee.objects.create(user=user)
             login(request, user)
             messages.success(request, 'Account created successfully!')
             return redirect('home')
