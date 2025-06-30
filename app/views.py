@@ -239,7 +239,7 @@ def task_create(request, project_pk):
         if form.is_valid():
             task = form.save(commit=False)
             task.project = project
-            form.save()
+            task.save()
             messages.success(request, f'Task "{task.name}" created successfully!')
             return redirect('task_list', project_pk=project.pk)
     else:
@@ -336,16 +336,16 @@ def comment_edit(request, project_pk, task_pk, comment_pk):
 @login_required
 def comment_delete(request, project_pk, task_pk, comment_pk):
     user = request.user
-    employee = user.employee
-    project = get_object_or_404(Project, pk=project_pk)
-    task = get_object_or_404(Task, pk=task_pk, project=project)
-    comment = get_object_or_404(task.comments, pk=comment_pk)
-    if not (employee == comment.employee or (user.role == 'pm' and employee in project.employees.all())):
+    comment = get_object_or_404(Comment, pk=comment_pk, task__pk=task_pk, task__project__pk=project_pk)
+    # Ensure only the comment author or a project manager can delete it
+    if comment.employee.user != user and user.role != 'pm':
         return HttpResponseForbidden('You do not have permission to delete this comment.')
     if request.method == 'POST':
         comment.delete()
         messages.success(request, 'Comment deleted successfully!')
-        return redirect('comment_list', project_pk=project.pk, task_pk=task.pk)
+        return redirect('comment_list', project_pk=project_pk, task_pk=task_pk)
+    project = get_object_or_404(Project, pk=project_pk)
+    task = get_object_or_404(Task, pk=task_pk)
     return render(request, 'comment_confirm_delete.html', {'comment': comment, 'project': project, 'task': task})
 
 
