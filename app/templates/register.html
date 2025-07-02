@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Register - Forge{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <div class="flex justify-center">
+                <i class="fas fa-tasks text-primary-600 text-4xl"></i>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Or
+                <a href="{% url 'login' %}" class="font-medium text-primary-600 hover:text-primary-500">
+                    sign in to your existing account
+                </a>
+            </p>
+        </div>
+        <form class="mt-8 space-y-6" method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Username
+                    </label>
+                    <input 
+                        id="{{ form.username.id_for_label }}" 
+                        name="{{ form.username.name }}" 
+                        type="text" 
+                        required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                        placeholder="Enter username"
+                        value="{{ form.username.value|default:'' }}"
+                    >
+                    {% if form.username.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.username.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Email
+                    </label>
+                    <input 
+                        id="{{ form.email.id_for_label }}" 
+                        name="{{ form.email.name }}" 
+                        type="email" 
+                        required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                        placeholder="Enter email"
+                        value="{{ form.email.value|default:'' }}"
+                    >
+                    {% if form.email.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.email.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Role
+                    </label>
+                    <select 
+                        id="{{ form.role.id_for_label }}" 
+                        name="{{ form.role.name }}" 
+                        required 
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    >
+                        {% for value, label in form.role.field.choices %}
+                        <option value="{{ value }}" {% if form.role.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.role.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.role.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Password
+                    </label>
+                    <input 
+                        id="{{ form.password1.id_for_label }}" 
+                        name="{{ form.password1.name }}" 
+                        type="password" 
+                        required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                        placeholder="Enter password"
+                    >
+                    {% if form.password1.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.password1.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Confirm Password
+                    </label>
+                    <input 
+                        id="{{ form.password2.id_for_label }}" 
+                        name="{{ form.password2.name }}" 
+                        type="password" 
+                        required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                        placeholder="Confirm password"
+                    >
+                    {% if form.password2.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.password2.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">
+                            Registration Error
+                        </h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <i class="fas fa-user-plus text-primary-500 group-hover:text-primary-400"></i>
+                    </span>
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

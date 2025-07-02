@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Forge{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Welcome Section -->
+    <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold">Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
+                <p class="text-primary-100 mt-2">Here's what's happening with your projects today.</p>
+            </div>
+            <div class="hidden md:block">
+                <i class="fas fa-chart-line text-6xl text-primary-200"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-project-diagram text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Active Projects</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ user.employee.projects.count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-tasks text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">My Tasks</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ user.employee.main_tasks.count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                    <i class="fas fa-clock text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">In Progress</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ in_progress_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Overdue</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ overdue_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Projects and Quick Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Projects -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Projects</h2>
+            </div>
+            <div class="p-6">
+                {% if user.employee.projects.all %}
+                    <div class="space-y-4">
+                        {% for project in user.employee.projects.all|slice:":5" %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full 
+                                    {% if project.status == 'active' %}bg-green-500
+                                    {% elif project.status == 'completed' %}bg-blue-500
+                                    {% elif project.status == 'draft' %}bg-gray-500
+                                    {% else %}bg-red-500{% endif %} mr-3"></div>
+                                <div>
+                                    <h3 class="font-medium text-gray-900">{{ project.name }}</h3>
+                                    <p class="text-sm text-gray-500">{{ project.get_status_display }}</p>
+                                </div>
+                            </div>
+                            <a href="{% url 'task_list' project.pk %}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                                View Tasks <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if user.employee.projects.count > 5 %}
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'project_list' %}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                            View all projects <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-project-diagram text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No projects assigned yet.</p>
+                        {% if user.role == 'pm' %}
+                        <a href="{% url 'project_create' %}" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+                            <i class="fas fa-plus mr-2"></i>Create Project
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Quick Actions</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <a href="{% url 'project_list' %}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                        <i class="fas fa-project-diagram text-blue-600 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="font-medium text-gray-900">View Projects</h3>
+                            <p class="text-sm text-gray-500">Browse all projects</p>
+                        </div>
+                    </a>
+
+                    {% if user.role == 'pm' %}
+                    <a href="{% url 'project_create' %}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                        <i class="fas fa-plus text-green-600 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="font-medium text-gray-900">New Project</h3>
+                            <p class="text-sm text-gray-500">Create a new project</p>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% with first_project=user.employee.projects.all|first %}
+                    {% if first_project %}
+                    <a href="{% url 'task_list' first_project.pk %}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                        <i class="fas fa-tasks text-purple-600 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="font-medium text-gray-900">My Tasks</h3>
+                            <p class="text-sm text-gray-500">View assigned tasks</p>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-chart-bar text-gray-600 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Analytics</h3>
+                            <p class="text-sm text-gray-500">Coming soon</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {% for task in user.employee.main_tasks.all|slice:":5" %}
+                <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-tasks text-primary-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">
+                            Task updated: {{ task.name }}
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            {{ task.project.name }} • {{ task.get_status_display }}
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0 text-sm text-gray-500">
+                        {{ task.updated_at|timesince }} ago
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">No recent activity.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

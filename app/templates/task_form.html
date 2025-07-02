@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit %}Edit Task{% else %}New Task{% endif %} - Forge{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <div class="flex items-center space-x-2 mb-2">
+            <a href="{% url 'task_list' project.pk %}" class="text-primary-600 hover:text-primary-700">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">
+                {% if edit %}Edit Task{% else %}Create New Task{% endif %}
+            </h1>
+        </div>
+        <p class="text-gray-500">
+            {% if edit %}Update task details for {{ project.name }}.{% else %}Create a new task for {{ project.name }}.{% endif %}
+        </p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Task Information</h2>
+        </div>
+        <form method="post" class="p-6 space-y-6">
+            {% csrf_token %}
+            
+            <!-- Task Name -->
+            <div>
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Task Name *
+                </label>
+                <input 
+                    type="text" 
+                    name="{{ form.name.name }}" 
+                    id="{{ form.name.id_for_label }}"
+                    value="{{ form.name.value|default:'' }}"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Enter task name"
+                    required
+                >
+                {% if form.name.errors %}
+                <div class="mt-1 text-sm text-red-600">
+                    {% for error in form.name.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                </label>
+                <textarea 
+                    name="{{ form.description.name }}" 
+                    id="{{ form.description.id_for_label }}"
+                    rows="4"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Describe the task..."
+                >{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}
+                <div class="mt-1 text-sm text-red-600">
+                    {% for error in form.description.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Assignee and Pair -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Main Assignee -->
+                <div>
+                    <label for="{{ form.main_employee.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Main Assignee *
+                    </label>
+                    <select 
+                        name="{{ form.main_employee.name }}" 
+                        id="{{ form.main_employee.id_for_label }}"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                        required
+                    >
+                        <option value="">Select assignee</option>
+                        {% for value, label in form.main_employee.field.choices %}
+                        {% if value %}
+                        <option value="{{ value }}" {% if form.main_employee.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    {% if form.main_employee.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.main_employee.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pair Assignee -->
+                <div>
+                    <label for="{{ form.pair_employee.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Pair Assignee
+                    </label>
+                    <select 
+                        name="{{ form.pair_employee.name }}" 
+                        id="{{ form.pair_employee.id_for_label }}"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                        <option value="">Select pair assignee (optional)</option>
+                        {% for value, label in form.pair_employee.field.choices %}
+                        {% if value %}
+                        <option value="{{ value }}" {% if form.pair_employee.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    {% if form.pair_employee.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.pair_employee.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Status and Priority -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Status -->
+                <div>
+                    <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Status
+                    </label>
+                    <select 
+                        name="{{ form.status.name }}" 
+                        id="{{ form.status.id_for_label }}"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                        {% for value, label in form.status.field.choices %}
+                        <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.status.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.status.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Priority -->
+                <div>
+                    <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Priority
+                    </label>
+                    <select 
+                        name="{{ form.priority.name }}" 
+                        id="{{ form.priority.id_for_label }}"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                        {% for value, label in form.priority.field.choices %}
+                        <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.priority.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.priority.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Due Date and Story Points -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Due Date -->
+                <div>
+                    <label for="{{ form.due_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Due Date
+                    </label>
+                    <input 
+                        type="date" 
+                        name="{{ form.due_date.name }}" 
+                        id="{{ form.due_date.id_for_label }}"
+                        value="{{ form.due_date.value|date:'Y-m-d'|default:'' }}"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                    {% if form.due_date.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.due_date.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Story Points -->
+                <div>
+                    <label for="{{ form.story_points.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Story Points
+                    </label>
+                    <input 
+                        type="number" 
+                        name="{{ form.story_points.name }}" 
+                        id="{{ form.story_points.id_for_label }}"
+                        value="{{ form.story_points.value|default:'1' }}"
+                        min="1"
+                        max="21"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                    {% if form.story_points.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.story_points.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% url 'task_list' project.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    {% if edit %}
+                    <i class="fas fa-save mr-2"></i>Update Task
+                    {% else %}
+                    <i class="fas fa-plus mr-2"></i>Create Task
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 
