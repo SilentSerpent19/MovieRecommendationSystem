@@ -1,4 +1,4 @@
-# Decision Tree Movie Recommendation System
+# Movie Recommendation System
 
 ## Overview
 A robust Django-based web application for personalized movie recommendations, leveraging real-world data from Kaggle, with mood-based filtering, user profiles, subscription management, analytics, and PayPal integration.
