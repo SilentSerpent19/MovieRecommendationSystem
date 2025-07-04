@@ -6,11 +6,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-<<<<<<< HEAD
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'decision.settings')
-=======
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'upwork.settings')
->>>>>>> e579d097883537c3ea403b38118fd7e43798b03b
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

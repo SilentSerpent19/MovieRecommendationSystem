@@ -3,7 +3,7 @@ from system.models import Movie, Watchlist, CuratedList, Mood, UserSubscription,
 from django.contrib.auth.models import User
 
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.conf import settings
@@ -18,57 +18,16 @@ import json
 from django.db.models import Count, Q, Avg
 from django.core.serializers.json import DjangoJSONEncoder
 
-# Simple form for user input
-from django import forms
-from .forms import EditProfileForm
-
-def get_unique_genres():
-    genres = set()
-    for movie in Movie.objects.all():
-        for g in (movie.genre or '').split(','):
-            g = g.strip()
-            if g:
-                genres.add(g)
-    return sorted(genres)
-
-ERA_CHOICES = [
-    ('', 'Any'),
-    ('1980s', '1980s'),
-    ('1990s', '1990s'),
-    ('2000s', '2000s'),
-    ('2010s', '2010s'),
-    ('2020s', '2020s'),
-]
-RATING_CHOICES = [
-    ('', 'Any'),
-    ('6', '6+'),
-    ('7', '7+'),
-    ('8', '8+'),
-]
-
-class RecommendationForm(forms.Form):
-    genre = forms.ChoiceField(choices=[], required=False)
-    era = forms.ChoiceField(choices=ERA_CHOICES, required=False)
-    rating = forms.ChoiceField(choices=RATING_CHOICES, required=False)
-    mood = forms.ChoiceField(choices=[], required=False)
-
-    def __init__(self, *args, **kwargs):
-        moods = kwargs.pop('moods', [])
-        super().__init__(*args, **kwargs)
-        genre_choices = [('', 'Any')] + [(g, g) for g in get_unique_genres()]
-        self.fields['genre'].choices = genre_choices
-        mood_choices = [('', 'Any')] + [(m.name, m.name) for m in moods]
-        self.fields['mood'].choices = mood_choices
+# Import forms from forms.py
+from .forms import EditProfileForm, RecommendationForm, UserRegistrationForm, get_unique_genres
 
 def smart_score(movie, user_genre, user_era, user_rating):
     score = 0
-    # Genre: exact match = 3, partial match = 1
     movie_genres = [g.strip().lower() for g in (movie.genre or '').split(',')]
     if user_genre and user_genre.lower() in movie_genres:
         score += 3
     elif user_genre and any(user_genre.lower() in g for g in movie_genres):
         score += 1
-    # Era: match = 2
     if user_era:
         era_map = {
             '1980s': (1980, 1989),
@@ -80,14 +39,12 @@ def smart_score(movie, user_genre, user_era, user_rating):
         start, end = era_map.get(user_era, (0, 9999))
         if movie.year and movie.year.isdigit() and start <= int(movie.year) <= end:
             score += 2
-    # Rating: above threshold = 1, higher rating = more points
     if user_rating and movie.imdb_rating:
         if movie.imdb_rating >= float(user_rating):
             score += 1 + (movie.imdb_rating - float(user_rating)) * 0.5
     return score
 
 def recommend_movies(user_genre, user_era, user_rating, user_mood=None, n_results=10):
-    # Only use movies with all required data
     movies = [m for m in Movie.objects.all() if m.genre and m.year and m.imdb_rating is not None]
     if not movies:
         return [], False
@@ -113,27 +70,22 @@ def recommend_movies(user_genre, user_era, user_rating, user_mood=None, n_result
             filtered = [m for m in filtered if m.mood and m.mood.name.lower() == mood.lower()]
         return filtered
 
-    # 1. Strict: mood + genre + era + rating
     strict = filter_movies(movies, user_genre, user_era, user_rating, user_mood)
     strict = sorted(strict, key=lambda m: smart_score(m, user_genre, user_era, user_rating), reverse=True)
     if strict:
         return strict[:n_results], False
-    # 2. Relax: genre + era + rating (ignore mood)
     relax1 = filter_movies(movies, user_genre, user_era, user_rating, None)
     relax1 = sorted(relax1, key=lambda m: smart_score(m, user_genre, user_era, user_rating), reverse=True)
     if relax1:
         return relax1[:n_results], True
-    # 3. Relax: genre + era (ignore mood, ignore rating)
     relax2 = filter_movies(movies, user_genre, user_era, None, None)
     relax2 = sorted(relax2, key=lambda m: smart_score(m, user_genre, user_era, user_rating), reverse=True)
     if relax2:
         return relax2[:n_results], True
-    # 4. Relax: genre only
     relax3 = filter_movies(movies, user_genre, None, None, None)
     relax3 = sorted(relax3, key=lambda m: smart_score(m, user_genre, user_era, user_rating), reverse=True)
     if relax3:
         return relax3[:n_results], True
-    # 5. Fallback: top movies
     fallback = sorted(movies, key=lambda m: smart_score(m, user_genre, user_era, user_rating), reverse=True)
     return fallback[:n_results], True
 
@@ -165,30 +117,7 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
 
-class UserRegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
-        'class': 'form-control',
-        'placeholder': 'Enter your email address'
-    }))
-    
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'password1', 'password2')
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Add CSS classes to all fields
-        for field_name, field in self.fields.items():
-            field.widget.attrs.update({
-                'class': 'form-control',
-                'placeholder': f'Enter your {field_name.replace("_", " ")}'
-            })
-            if field_name == 'username':
-                field.widget.attrs['placeholder'] = 'Choose a username'
-            elif field_name == 'password1':
-                field.widget.attrs['placeholder'] = 'Create a password'
-            elif field_name == 'password2':
-                field.widget.attrs['placeholder'] = 'Confirm your password'
+
 
 def register_view(request):
     if request.method == 'POST':
@@ -311,7 +240,6 @@ def recommend_view(request):
                 rating = request.POST.get('rating', '')
                 mood = request.POST.get('mood', '')
                 print(f"[DEBUG] RECOMMEND (invalid): genre={genre}, era={era}, rating={rating}, mood={mood}, current_index={current_index}")
-        # form is already set above
     else:
         form = RecommendationForm(moods=moods)
     print(f"[DEBUG] FINAL: genre={genre}, era={era}, rating={rating}, mood={mood}, current_index={current_index}")
@@ -324,13 +252,11 @@ def recommend_view(request):
     daily_limit = 5
     show_ads = not user_is_premium
     show_upgrade = not user_is_premium
-    # Freemium: limit recommendations for free users
     if not user_is_premium:
         rec_count = request.session.get('rec_count', 0)
         if rec_count >= daily_limit:
             return render(request, 'limit_reached.html', {'show_upgrade': show_upgrade})
         request.session['rec_count'] = rec_count + 1
-    # Log user interaction
     if request.user.is_authenticated:
         UserInteraction.objects.create(user=request.user, action='view_recommendation')
     recommendations_json = json.dumps([
@@ -411,21 +337,18 @@ def analytics_dashboard(request):
     now = timezone.now()
     last_30 = now - timedelta(days=30)
 
-    # Most watchlisted movies (all time)
     popular_movies = (
         Movie.objects.annotate(count=Count('watchlist'))
         .order_by('-count')[:10]
     )
     popular_movies = [(m, m.count) for m in popular_movies if m.count > 0]
 
-    # Most watchlisted movies (last 30 days)
     recent_watchlist = Watchlist.objects.filter(added_at__gte=last_30)
     recent_movie_counts = {}
     for w in recent_watchlist:
         recent_movie_counts[w.movie] = recent_movie_counts.get(w.movie, 0) + 1
     trending_movies = sorted(recent_movie_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # Most watchlisted genres (all time)
     genre_counts = {}
     for m in Movie.objects.all():
         for g in (m.genre or '').split(','):
@@ -434,7 +357,6 @@ def analytics_dashboard(request):
                 genre_counts[g] = genre_counts.get(g, 0) + Watchlist.objects.filter(movie=m).count()
     popular_genres = sorted(genre_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # Most watchlisted genres (last 30 days)
     recent_genre_counts = {}
     for w in recent_watchlist:
         for g in (w.movie.genre or '').split(','):
@@ -443,7 +365,6 @@ def analytics_dashboard(request):
                 recent_genre_counts[g] = recent_genre_counts.get(g, 0) + 1
     trending_genres = sorted(recent_genre_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # Most recommended movies/genres (from UserInteraction logs)
     rec_logs = UserInteraction.objects.filter(action='view_recommendation')
     rec_movie_counts = {}
     rec_genre_counts = {}
@@ -457,7 +378,6 @@ def analytics_dashboard(request):
     most_rec_movies = sorted(rec_movie_counts.items(), key=lambda x: x[1], reverse=True)[:10]
     most_rec_genres = sorted(rec_genre_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # Most active users (by watchlist adds)
     user_watchlist_counts = (
         Watchlist.objects.values('user')
         .annotate(count=Count('id'))
@@ -468,7 +388,6 @@ def analytics_dashboard(request):
         (user_map.get(uwc['user']), uwc['count']) for uwc in user_watchlist_counts if uwc['user'] in user_map
     ]
 
-    # Average IMDb rating of watchlisted movies
     avg_rating = Watchlist.objects.filter(movie__imdb_rating__isnull=False).aggregate(avg=Avg('movie__imdb_rating'))['avg']
 
     return render(request, 'analytics_dashboard.html', {
@@ -492,8 +411,6 @@ def secure_payment(request):
     amount = data['amount']
     currency = data['currency']
     description = data['description']
-    # Process the payment
-    # ... (implementation of payment processing logic)
     return JsonResponse({'status': 'success', 'message': 'Payment processed successfully'})
 
 @login_required
@@ -501,12 +418,8 @@ def secure_payment_view(request, plan_id):
     plan = get_object_or_404(SubscriptionPlan, id=plan_id)
     
     if request.method == 'POST':
-        # Handle payment processing here
-        # For now, we'll simulate a successful payment
         try:
-            # Deactivate any existing subscriptions
             UserSubscription.objects.filter(user=request.user).update(active=False)
-            # Calculate expires_at based on plan duration
             now = timezone.now()
             if plan.duration == 'monthly':
                 expires_at = now + timedelta(days=30)
@@ -516,7 +429,6 @@ def secure_payment_view(request, plan_id):
                 expires_at = None
             else:
                 expires_at = None
-            # Create or update subscription
             UserSubscription.objects.update_or_create(
                 user=request.user,
                 defaults={'plan': plan, 'active': True, 'started_at': now, 'expires_at': expires_at}
@@ -549,9 +461,7 @@ def process_payment(request):
             expires_at = None
         else:
             expires_at = None
-        # Deactivate any existing subscriptions
         UserSubscription.objects.filter(user=request.user).update(active=False)
-        # Create or update subscription
         UserSubscription.objects.update_or_create(
             user=request.user,
             defaults={'plan': plan, 'active': True, 'started_at': now, 'expires_at': expires_at}
@@ -593,15 +503,12 @@ def next_recommendation_set(request):
         mood = data.get('mood', '')
         current_index = data.get('current_index', 0)
         
-        # Get next set of recommendations
         recs, fallback_used = recommend_movies(genre, era, rating, mood)
         
         if recs:
-            # Get the next movie in the sequence
             next_index = (current_index + 1) % len(recs)
             next_movie = recs[next_index]
             
-            # Prepare movie data
             movie_data = {
                 'title': next_movie.title,
                 'year': next_movie.year,
@@ -654,7 +561,6 @@ def edit_profile_view(request):
             if changed:
                 user.save()
                 messages.success(request, 'Profile updated successfully!')
-                # If password changed, re-authenticate
                 if cd.get('new_password1'):
                     from django.contrib.auth import update_session_auth_hash
                     update_session_auth_hash(request, user)

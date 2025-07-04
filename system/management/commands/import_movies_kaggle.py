@@ -21,14 +21,11 @@ class Command(BaseCommand):
         self.stdout.write('Loading credits.csv...')
         credits_df = pd.read_csv(credits_path)
 
-        # Convert id columns to string for join
         movies_df['id'] = movies_df['id'].astype(str)
         credits_df['id'] = credits_df['id'].astype(str)
 
-        # Merge on 'id'
         merged_df = pd.merge(movies_df, credits_df, on='id')
 
-        # Filter out rows with missing or empty required fields first
         merged_df = merged_df[
             merged_df['title'].notnull() &
             merged_df['release_date'].notnull() &
@@ -41,14 +38,12 @@ class Command(BaseCommand):
             (merged_df['genres'].str.strip() != '')
         ]
 
-        # Filter to only movies in eras we offer (1980-2029)
         merged_df['year'] = merged_df['release_date'].str[:4]
         merged_df = merged_df[merged_df['year'].str.isdigit()]
         merged_df = merged_df[(merged_df['year'].astype(int) >= 1980) & (merged_df['year'].astype(int) <= 2029)]
 
         self.stdout.write(f'Found {len(merged_df)} movies with basic data quality...')
 
-        # Process more movies to ensure we get 5000
         target_movies = 5000
         processed_count = 0
         imported_count = 0
@@ -86,17 +81,14 @@ class Command(BaseCommand):
             except Exception:
                 pass
 
-            # Skip if any critical field is empty
             if not (title and year and genre and director and actors and imdb_rating is not None):
                 skipped_count += 1
                 continue
 
-            # Avoid duplicates: check for existing movie with same title and year
             if Movie.objects.filter(title=title, year=year).exists():
                 skipped_count += 1
                 continue
 
-            # Create Movie
             Movie.objects.create(
                 title=title,
                 year=year,

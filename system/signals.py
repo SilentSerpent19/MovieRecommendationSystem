@@ -9,11 +9,10 @@ from datetime import datetime, timedelta
 def paypal_payment_received(sender, **kwargs):
     ipn_obj = sender
     if ipn_obj.payment_status == ST_PP_COMPLETED:
-        custom = ipn_obj.custom  # Format: user_id:plan_id
+        custom = ipn_obj.custom
         user_id, plan_id = custom.split(':')
         user = User.objects.get(id=user_id)
         plan = SubscriptionPlan.objects.get(id=plan_id)
-        # Activate subscription for 1 month (customize as needed)
         UserSubscription.objects.update_or_create(
             user=user,
             defaults={

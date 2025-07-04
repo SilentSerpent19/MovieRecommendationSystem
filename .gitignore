@@ -1,6 +1,5 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-<<<<<<< HEAD
 *.py[cod]
 *$py.class
 
@@ -368,35 +367,4 @@ temp/
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
-.pnp.* 
-=======
-*.pyc
-*.pyo
-*.pyd
-
-# SQLite database
-db.sqlite3
-*.sqlite3
-
-# Environment variables
-.env
-
-# Static files
-/static/
-
-# Media files
-/media/
-
-# IDE settings
-.idea/
-.vscode/
-
-# OS-generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db 
->>>>>>> e579d097883537c3ea403b38118fd7e43798b03b
+.pnp.*
