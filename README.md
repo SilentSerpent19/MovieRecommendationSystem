@@ -35,6 +35,23 @@ What the numbers say:
 - **Content similarity alone is less accurate than popularity but far more diverse.** It recommends 65–88% of the
   catalog, against 3% for popularity. This is the usual accuracy versus coverage trade-off.
 
+### Diversity trade-off
+
+The served lists are re-ranked with Maximal Marginal Relevance (MMR) to avoid ten near-identical movies. The amount
+of diversity was chosen on validation, as the largest setting that keeps NDCG within 5% of no re-ranking.
+Diversity is measured as intra-list diversity (ILD): the mean pairwise distance between the Tag Genome embeddings of
+the 10 movies. The table shows test results.
+
+| MMR diversity | NDCG@10 | ILD@10 |
+|---|---|---|
+| 0.0 (no re-ranking) | 0.127 | 0.62 |
+| 0.2 | 0.127 | 0.66 |
+| **0.4 (served)** | **0.122** (−3.7%) | **0.73** (+18%) |
+| 0.7 | 0.096 (−24%) | 0.90 |
+
+Light re-ranking adds diversity at no cost to accuracy. Beyond about 0.4 the accuracy drops quickly. MMR barely
+changes catalog coverage, because it only reorders each user's own top 200; broader coverage needs a different model.
+
 ## Data
 
 | source | used for | size |
@@ -77,7 +94,8 @@ Serving pipeline (`system/recommender.py`), shared by the web page, the REST API
 2. **Exclude** movies the user has already liked, saved or disliked.
 3. **Score** with the hybrid model, using the user's likes and watchlist as history. Popularity is used when the
    user has no history; the Bayesian rating is used when no model is trained.
-4. **Re-rank** the top 200 for diversity with Maximal Marginal Relevance on genome embeddings.
+4. **Re-rank** the top 200 for diversity with MMR on genome embeddings. The diversity value (0.4) is selected
+   offline and stored in the model artifact.
 5. **Explain** each pick as "Because you liked X", where X is the most similar item in the user's history.
 6. **Log** a `RecommendationRequest`, plus an `Impression` per item. Likes, dislikes and watchlist actions are stored
    as `Event`s linked to the request that showed them, so the staff analytics page can report an online action rate
@@ -108,7 +126,7 @@ Typical response time is 3–7 ms per request once the model is loaded.
   | step | time | peak memory |
   |---|---|---|
   | `prepare_data` | 85 s (50 s of it Wikidata, cached after the first run) | 430 MB |
-  | `evaluate_recommenders` | 49 s | 385 MB |
+  | `evaluate_recommenders` (incl. diversity sweep) | 88 s | 410 MB |
   | `train_recommender` | ~1 s | small |
 
 ## Quickstart
@@ -130,7 +148,7 @@ You can change the dataset size with `prepare_data --movies 3000 --users 5000`. 
 Tests and lint:
 
 ```bash
-pytest                                              # 40 tests, no downloads needed
+pytest                                              # no downloads needed
 pytest system/tests/test_ml_models.py -k knn        # a single test
 ruff check system/
 ```
@@ -158,7 +176,7 @@ reports/              committed evaluation results
 - **The results come from one sample.** There is one seed and one 10,000-user sample over the 5,000 most-rated
   movies, so the numbers say nothing about long-tail items. The confidence intervals cover user sampling only, not
   tuning or split variance.
-- **Serving-time choices are not evaluated offline.** MMR diversity (0.3) and filter relaxation have no offline score.
+- **Filter relaxation is not evaluated offline.** It only changes which candidates are eligible.
 - **The model learns only from MovieLens users.** App users get personalised results through item similarity from
   their likes, but their behaviour is logged, not used to retrain the model.
 - **The data ends in November 2019**, so newer movies aren't in the catalog.

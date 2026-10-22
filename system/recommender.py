@@ -29,7 +29,7 @@ ERAS = {
 # Order in which filters are dropped when too few movies match: least to most important.
 RELAX_ORDER = ('mood', 'min_rating', 'era', 'genre')
 CANDIDATE_POOL = 200  # top-scored candidates handed to the diversity re-ranker
-DIVERSITY = 0.3
+DIVERSITY = 0.3  # used only for model artifacts that predate the diversity sweep
 
 
 @dataclass(frozen=True)
@@ -68,6 +68,7 @@ class LoadedModel:
     index_of: dict  # movielens_id -> item index
     item_ids: np.ndarray
     version: str
+    diversity: float  # MMR trade-off selected offline (reports/evaluation.md)
 
 
 def load_model() -> LoadedModel | None:
@@ -81,8 +82,9 @@ def load_model() -> LoadedModel | None:
 
 @lru_cache(maxsize=2)
 def _load_version(model_dir: str, version: str) -> LoadedModel:
-    model, item_ids, _ = artifacts.load(Path(model_dir), version)
-    return LoadedModel(model, {int(m): i for i, m in enumerate(item_ids)}, item_ids, version)
+    model, item_ids, meta = artifacts.load(Path(model_dir), version)
+    return LoadedModel(model, {int(m): i for i, m in enumerate(item_ids)}, item_ids, version,
+                       meta['params'].get('diversity', DIVERSITY))
 
 
 def candidate_queryset(filters: Filters, dropped: set[str]):
@@ -148,7 +150,7 @@ def _rank_with_model(loaded: LoadedModel, rows: list[tuple[int, int]], liked: li
     scores = loaded.model.score(X)[0]
     pool = candidates[np.argsort(-scores[candidates], kind='stable')[:CANDIDATE_POOL]]
     embeddings = loaded.model.content.embeddings
-    chosen = mmr_rerank(pool, scores[pool], embeddings, k, DIVERSITY)
+    chosen = mmr_rerank(pool, scores[pool], embeddings, k, loaded.diversity)
 
     reasons = _explain(chosen, history, embeddings, [liked_ml[int(loaded.item_ids[h])] for h in history])
     movies = Movie.objects.prefetch_related('genres', 'moods').in_bulk([pk_of[i] for i in chosen])

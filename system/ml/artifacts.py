@@ -10,7 +10,8 @@ from .models import ContentModel, HybridModel, ItemKNNModel, PopularityModel
 LATEST = 'LATEST'
 
 
-def save(model: HybridModel, item_ids: np.ndarray, model_dir: Path, version: str, meta: dict) -> Path:
+def save(model: HybridModel, item_ids: np.ndarray, model_dir: Path, version: str, meta: dict,
+         diversity: float = 0.3) -> Path:
     out = model_dir / version
     out.mkdir(parents=True, exist_ok=False)
     np.save(out / 'item_ids.npy', item_ids)
@@ -19,7 +20,7 @@ def save(model: HybridModel, item_ids: np.ndarray, model_dir: Path, version: str
     sp.save_npz(out / 'similarity.npz', model.knn.similarity)
     params = {'history_prior': model.history_prior, 'popularity_weight': model.popularity_weight,
               'knn_k': model.knn.k, 'knn_shrink': model.knn.shrink,
-              'content_components': model.content.n_components}
+              'content_components': model.content.n_components, 'diversity': diversity}
     (out / 'meta.json').write_text(json.dumps({'version': version, 'params': params, **meta}, indent=2))
     (model_dir / LATEST).write_text(version)
     return out

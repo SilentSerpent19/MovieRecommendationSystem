@@ -3,13 +3,18 @@ import numpy as np
 import scipy.sparse as sp
 from scipy.stats import rankdata
 
+from .models import mmr_rerank
+
 
 def top_k(scores: np.ndarray, exclude: sp.csr_matrix, k: int) -> np.ndarray:
     """Indices of the k best items per row, never recommending excluded (already seen) items."""
     scores = scores.copy()
     rows, cols = exclude.nonzero()
     scores[rows, cols] = -np.inf
-    part = np.argpartition(-scores, k, axis=1)[:, :k]
+    if k >= scores.shape[1]:
+        part = np.tile(np.arange(scores.shape[1]), (scores.shape[0], 1))
+    else:
+        part = np.argpartition(-scores, k, axis=1)[:, :k]
     order = np.argsort(-np.take_along_axis(scores, part, axis=1), axis=1, kind='stable')
     return np.take_along_axis(part, order, axis=1)
 
@@ -17,8 +22,18 @@ def top_k(scores: np.ndarray, exclude: sp.csr_matrix, k: int) -> np.ndarray:
 METRICS = ('precision', 'recall', 'ndcg', 'hit_rate', 'popularity_percentile')
 
 
+def intra_list_diversity(embeddings: np.ndarray) -> float:
+    """Mean pairwise cosine distance between the (L2-normalised) embeddings of one recommendation list."""
+    n = len(embeddings)
+    if n < 2:
+        return 0.0
+    sims = embeddings @ embeddings.T
+    return float((n * n - sims.sum()) / (n * (n - 1)))  # diagonal sims are 1, so they cancel out
+
+
 def evaluate(model, train: sp.csr_matrix, seen: sp.csr_matrix, relevant: sp.csr_matrix,
-             item_popularity: np.ndarray, k: int = 10, batch: int = 1000, per_user: bool = False) -> dict:
+             item_popularity: np.ndarray, k: int = 10, batch: int = 1000, per_user: bool = False,
+             embeddings: np.ndarray | None = None, diversity: float = 0.0, pool: int = 200) -> dict:
     """Precision/recall/NDCG/hit-rate@k over users with at least one relevant held-out item.
 
     train:    positives the model may use as the user's history
@@ -26,15 +41,23 @@ def evaluate(model, train: sp.csr_matrix, seen: sp.csr_matrix, relevant: sp.csr_
     relevant: held-out positives
     Also reports catalog coverage and novelty (mean popularity percentile of recommended items).
     With per_user=True the per-user NDCG array is returned under '_ndcg' for significance testing.
+    With `embeddings`, also reports intra-list diversity (ILD); with diversity > 0, each list is the MMR
+    re-ranking of the top `pool` items, exactly as the serving layer does it.
     """
     users = np.flatnonzero(np.diff(relevant.indptr) > 0)
     discounts = 1.0 / np.log2(np.arange(2, k + 2))
     pop_pct = (rankdata(item_popularity, method='average') - 1) / max(len(item_popularity) - 1, 1)
-    values = {m: np.zeros(len(users)) for m in METRICS}
+    metrics = METRICS + (('ild',) if embeddings is not None else ())
+    values = {m: np.zeros(len(users)) for m in metrics}
     recommended = np.zeros(train.shape[1], bool)
     for start in range(0, len(users), batch):
         u = users[start:start + batch]
-        recs = top_k(model.score(train[u]), seen[u], k)
+        scores = model.score(train[u])
+        if diversity > 0:
+            cand = top_k(scores, seen[u], pool)
+            recs = np.stack([mmr_rerank(c, scores[r, c], embeddings, k, diversity) for r, c in enumerate(cand)])
+        else:
+            recs = top_k(scores, seen[u], k)
         recommended[recs.ravel()] = True
         rel = relevant[u]
         for row, items in enumerate(recs):
@@ -47,6 +70,8 @@ def evaluate(model, train: sp.csr_matrix, seen: sp.csr_matrix, relevant: sp.csr_
             values['ndcg'][i] = (discounts * hits).sum() / discounts[:min(len(truth), k)].sum()
             values['hit_rate'][i] = n_hits > 0
             values['popularity_percentile'][i] = pop_pct[items].mean()
+            if embeddings is not None:
+                values['ild'][i] = intra_list_diversity(embeddings[items])
     result = {f'{m}@{k}': round(float(v.mean()), 4) for m, v in values.items()}
     result['coverage'] = round(float(recommended.mean()), 4)
     result['users_evaluated'] = int(len(users))

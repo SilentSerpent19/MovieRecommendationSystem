@@ -10,7 +10,8 @@ from system.ml.data import load_dataset
 
 def to_markdown(report: dict) -> str:
     k = report['protocol']['k']
-    cols = [f'ndcg@{k}', f'recall@{k}', f'precision@{k}', f'hit_rate@{k}', 'coverage', f'popularity_percentile@{k}']
+    cols = [f'ndcg@{k}', f'recall@{k}', f'precision@{k}', f'hit_rate@{k}', 'coverage', f'popularity_percentile@{k}',
+            f'ild@{k}']
     lines = ['# Offline evaluation', '',
              f"Protocol: {report['protocol']['split']} split "
              f"({report['protocol']['val_frac']:.0%} validation, {report['protocol']['test_frac']:.0%} test per user), "
@@ -29,6 +30,15 @@ def to_markdown(report: dict) -> str:
               '|---|---|---|']
     for name, c in report['paired_comparisons'].items():
         lines.append(f"| {name} | {c[f'mean_ndcg@{k}_diff']:+.4f} | [{c['ci95'][0]:+.4f}, {c['ci95'][1]:+.4f}] |")
+    div = report['diversity']
+    lines += ['', '## Diversity trade-off (served hybrid, MMR re-ranking of the top 200)', '',
+              f"Selection rule: {div['rule']}. Selected: **{div['selected']}**.", '',
+              '| diversity | validation NDCG | validation ILD | test NDCG | test ILD | test coverage | '
+              'test popularity pct |', '|---|---|---|---|---|---|---|']
+    for v, t in zip(div['validation'], div['test'], strict=True):
+        lines.append(f"| {v['diversity']} | {v[f'ndcg@{k}']:.4f} | {v['ild@' + str(k)]:.4f} | {t[f'ndcg@{k}']:.4f} | "
+                     f"{t['ild@' + str(k)]:.4f} | {t['coverage']:.4f} | {t[f'popularity_percentile@{k}']:.4f} |")
+    lines += ['', 'ILD = mean pairwise cosine distance between Tag Genome embeddings of the 10 recommended movies.']
     lines += ['', '## Selected hyperparameters', '', '```json', json.dumps(report['selected_params'], indent=2), '```',
               '', f"Data: {report['data']}. Runtime: {report['runtime_seconds']}s.", '']
     return '\n'.join(lines)

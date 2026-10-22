@@ -51,7 +51,8 @@ class Command(BaseCommand):
                 'test_results_cold_start': report['test_results_cold_start'] if report else None,
             },
         }
-        out = artifacts.save(model, ds.item_ids, settings.MODEL_DIR, version, meta)
+        out = artifacts.save(model, ds.item_ids, settings.MODEL_DIR, version, meta,
+                             diversity=params.get('diversity', 0.3))
         size_mb = sum(f.stat().st_size for f in out.iterdir()) / 1e6
         self.stdout.write(self.style.SUCCESS(
             f'Saved model {version} to {out} ({size_mb:.1f} MB, {model.knn.similarity.nnz} similarity entries, '
