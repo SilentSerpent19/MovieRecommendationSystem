@@ -6,12 +6,18 @@ from rest_framework.response import Response
 from .forms import RecommendationForm
 from .models import CuratedList, Watchlist
 from .recommender import recommend
-from .serializers import CuratedListSerializer, MovieSerializer, UserSerializer, WatchlistSerializer
+from .serializers import (
+    CuratedListSerializer,
+    MovieSerializer,
+    RegisterSerializer,
+    UserSerializer,
+    WatchlistSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
 class LoginView(views.APIView):

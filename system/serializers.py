@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from .models import CuratedList, Movie, Watchlist
@@ -8,6 +9,22 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'password']
+
+    def validate(self, attrs):
+        validate_password(attrs['password'], User(username=attrs.get('username'), email=attrs.get('email')))
+        return attrs
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
 
 
 class MovieSerializer(serializers.ModelSerializer):
