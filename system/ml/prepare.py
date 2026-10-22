@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 import numpy as np
 import pandas as pd
 
-from . import enrich, movielens, moods, sources
+from . import enrich, moods, movielens, sources
 from .config import DataConfig
 
 log = logging.getLogger(__name__)

@@ -1,8 +1,11 @@
-from django.core.management.base import BaseCommand
+import random
+
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.core.management.base import BaseCommand
+
 from system.models import Movie
-import random
+
 
 class Command(BaseCommand):
     help = 'Send weekly movie recommendations to all users (stub).'
@@ -22,4 +25,4 @@ class Command(BaseCommand):
                 [user.email],
                 fail_silently=True,
             )
-            self.stdout.write(self.style.SUCCESS(f'Sent recs to {user.email}')) 
+            self.stdout.write(self.style.SUCCESS(f'Sent recs to {user.email}'))
