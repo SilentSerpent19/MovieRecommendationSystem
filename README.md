@@ -1,5 +1,7 @@
 # Movie Recommendation System
 
+[![CI](https://github.com/SilentSerpent19/MovieRecommendationSystem/actions/workflows/ci.yml/badge.svg)](https://github.com/SilentSerpent19/MovieRecommendationSystem/actions/workflows/ci.yml)
+
 A Django web app backed by a small, reproducible recommender-systems pipeline built on **MovieLens 25M**.
 Users filter by genre, era, IMDb rating and mood. A hybrid model (item-kNN collaborative filtering plus
 Tag Genome content similarity) ranks the matches using what each user has liked or saved, and explains every pick.
