@@ -43,8 +43,13 @@ class Command(BaseCommand):
             'n_users': ds.n_users, 'n_items': ds.n_items, 'n_positive_interactions': int(X.nnz),
             'similarity_nnz': int(model.knn.similarity.nnz),
             'params_source': 'reports/evaluation.json' if report else 'defaults',
-            'test_results': report['test_results'] if report else None,
-            'test_results_cold_start': report['test_results_cold_start'] if report else None,
+            # Offline metrics come from the same configuration refit on train+validation and scored on the
+            # held-out test period; this artifact is then refit on all interactions, so it has no test score.
+            'offline_evaluation': {
+                'evaluated_model': 'same hyperparameters, fit on train+validation (see reports/evaluation.json)',
+                'test_results': report['test_results'] if report else None,
+                'test_results_cold_start': report['test_results_cold_start'] if report else None,
+            },
         }
         out = artifacts.save(model, ds.item_ids, settings.MODEL_DIR, version, meta)
         size_mb = sum(f.stat().st_size for f in out.iterdir()) / 1e6

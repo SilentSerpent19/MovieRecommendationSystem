@@ -4,58 +4,58 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A Django movie recommendation web app: server-rendered templates and a DRF API. Movie data is imported from the Kaggle "The Movies Dataset" CSVs. Users filter by mood, genre, era and minimum rating, and step through matching movies one at a time. There are also accounts, a watchlist, curated lists, an analytics page and Free/Premium/Pro subscriptions.
+A DS/ML learning and portfolio project: a Django movie recommender built on MovieLens 25M, with Tag Genome moods,
+IMDb ratings and Wikidata metadata. It must stay runnable on an 8 GB laptop. Prefer streaming, sampling and sparse
+matrices, and never build dense user×item or item×item matrices. There are no payments or subscriptions; they were
+removed on purpose.
 
 ## Commands
 
-There is no committed virtualenv, linter config or pytest setup. Use Django's own tooling.
-
 ```bash
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt   # also needs django-paypal (see pitfalls)
+uv venv --python 3.12 venv && source venv/bin/activate && pip install -r requirements-dev.txt
 python manage.py migrate
+python manage.py prepare_data            # download (md5-checked) + stream -> data/processed/ (~85 s, ~430 MB peak)
+python manage.py load_catalog            # idempotent upsert into the DB
+python manage.py evaluate_recommenders   # tune on validation, score test once -> reports/evaluation.{json,md}
+python manage.py train_recommender       # fit on all data with the selected params -> data/models/<version>/, LATEST
 python manage.py runserver
 
-# Data pipeline: run in this order. CSVs go in data/ (git-ignored).
-python manage.py import_movies_kaggle   # needs data/movies_metadata.csv + data/credits.csv
-python manage.py add_moods              # creates Mood rows; assign_moods does nothing without them
-python manage.py assign_moods
-python manage.py send_weekly_recs       # emails 3 random movies per user (console backend by default)
-
-# Tests (django.test.TestCase)
-python manage.py test system
-python manage.py test system.tests.BasicFlowTests.test_login   # single test
+pytest                                   # all tests; none need downloads
+pytest system/tests/test_recommender.py::test_filters_restrict_candidates   # single test
+ruff check system/
 ```
-
-Configuration comes from environment variables or `.env`, read by django-environ. `ENVIRONMENT_SETUP.md` lists them. With nothing set, the app uses SQLite (`db.sqlite3`), `DEBUG=True` and a hardcoded dev `SECRET_KEY`. Setting `DATABASE_URL` switches to another database through dj-database-url.
 
 ## Architecture
 
-- `decision/` is the project package. `settings.py` sets `ROOT_URLCONF = 'decision.urls'`, which mounts `system.urls` at `/`, `system.api_urls` at `/api/`, and the django-paypal IPN at `/paypal/`. The top-level `urls.py` is a leftover that Django never loads.
-- `system/` is the only app and holds everything else.
-- **Recommendation engine** (`system/views.py`, `smart_score` and `recommend_movies`):
-  - Rule-based. There's no ML model and no personalization; `scikit-learn` is in `requirements.txt` but never used.
-  - Loads every `Movie` into Python and filters strictly on genre, era, rating and mood.
-  - When nothing matches, it drops mood, then rating, then era, then genre, and returns `(top_10, fallback_used)`.
-  - Three callers use it: `recommend_view` (form POST), `next_recommendation_set` (AJAX "Next" from `recommend.html`, cycling `current_index` through the same top 10), and `api_views.MovieRecommendationView` (which doesn't pass mood).
-- **Mood labelling.** Each `Movie` has a single `mood` foreign key, set offline by `assign_moods` from substring matches on the genre string (`GENRE_TO_MOODS`). A second, separate map, `MOOD_GENRE_MAP` in `views.py`, is passed only to the template for UI hints. The two maps are not in sync.
-- **Movie fields.** `genre` is one comma-separated string and `year` is a `CharField`. Code everywhere splits and parses them by hand. `imdb_rating` actually holds TMDB `vote_average`. `vote_count` and the TMDB/IMDb IDs are not stored.
-- **Premium gating.**
-  - `is_premium(user)` checks for an active `UserSubscription` that hasn't expired.
-  - Free users get 5 recommendation page loads per *session* (`request.session['rec_count']`), and are capped at 5 watchlist items.
-  - Pro is detected by `plan.name == 'Pro'`.
-- **Subscriptions** are activated in three places:
-  - the PayPal IPN handler in `system/signals.py`, connected in `SystemConfig.ready()`;
-  - `secure_payment_view`;
-  - `process_payment`, a mock JSON endpoint that is `csrf_exempt` and takes no real payment.
-- **Interaction logging.** `UserInteraction` rows with `action='view_recommendation'` are written without a `movie`, so the analytics dashboard's "most recommended" sections are always empty.
-- **Templates** all extend `base.html`, which loads Bootstrap 5 and jQuery from a CDN. Styling is in `system/static/cinema.css`.
+- `system/ml/` is pure Python/numpy/scipy/sklearn with **no Django imports**. The offline experiment and the web app
+  share these model classes, so evaluation and serving cannot drift apart.
+  - `prepare.py` orchestrates `movielens.py` (streaming zip readers), `moods.py` and `enrich.py`.
+    Its outputs are index-aligned: row *i* of `catalog.csv` is item *i* in every `.npy` array and model artifact.
+  - `models.py`: every model has `fit(X_users×items CSR of positives, genome)` and `score(X_users) -> dense batch×items`.
+    The hybrid min-max-normalises item-kNN and content scores per row and blends them with weight `n/(n+history_prior)`.
+  - `experiment.py`: per-user chronological 70/10/20 split (ties at the boundary go to the later fold).
+    Hyperparameters are chosen on validation. Cold start is evaluated *leak-free*: cold users are truncated to 3
+    likes inside the training matrix before fitting.
+  - `artifacts.py`: versioned model directory plus a `LATEST` pointer.
+- `system/recommender.py` is the only serving path; the web view, `/api/recommend/` and `send_weekly_recs` all use it.
+  - Pipeline: filter candidates in the DB → relax filters in `RELAX_ORDER` until ≥ k match → exclude liked, saved and
+    disliked movies → score with the hybrid (popularity when there's no history) → MMR re-rank on genome embeddings →
+    "Because you liked X" → log `RecommendationRequest` + `Impression`.
+  - It falls back to `weighted_rating` when no model exists. The model is re-resolved from `LATEST` on each call.
+- User history means watchlist items plus likes (`Feedback.value == 1`). Actions are logged as `Event`s carrying the
+  `request_id` of the list that showed them; the staff-only `/analytics/` page uses this to compute an online action
+  rate.
+- Moods are scored per movie (`MovieMood.score`, assigned when ≥ `MOOD_THRESHOLD`, 0.5 by default). They come from
+  genome tags listed in `system/ml/moods.py`, not from genres.
 
-## Known pitfalls
+## Conventions and pitfalls
 
-- `import_movies_kaggle` starts with `Movie.objects.all().delete()`. `Watchlist` uses `on_delete=CASCADE`, so re-importing wipes every user's watchlist and empties curated lists.
-- `import_movies_kaggle` imports the first 5,000 rows that qualify, in CSV file order (years 1980–2029, with director and cast present). They are not chosen by quality.
-- `assign_moods` skips movies that already have a mood, and picks a mood from `list(set(...))`. The order of a set of strings changes between processes, so its labels are not reproducible.
-- `requirements.txt` lists `paypalrestsdk`, but the code imports `paypal.standard` from **django-paypal**, which must be installed separately.
-- `system/signals.py` writes `start_date`/`end_date`. The model fields are `started_at`/`expires_at`.
-- `BasicFlowTests.test_subscribe_flow` expects `subscribe_view` to create a subscription. It doesn't, so the test fails.
+- After changing anything in `system/ml/`, rerun `evaluate_recommenders` and commit the updated `reports/`. Claims in
+  the README must match `reports/evaluation.md`.
+- `data/` is git-ignored except `data/README.md`. The MovieLens and IMDb licences forbid redistribution and
+  commercial use.
+- Watchlist, feedback and logging foreign keys to `Movie` are `PROTECT`, and `load_catalog` never deletes movies.
+- Changing the catalog size or seed changes item indices. After `prepare_data`, always rerun `load_catalog` and
+  `train_recommender`.
+- Known evaluation caveats: the Tag Genome and the catalog selection use all ratings, including the test period, and
+  there is no global time cut.

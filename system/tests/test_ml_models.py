@@ -124,3 +124,18 @@ def test_bootstrap_ci_brackets_the_mean():
     values = np.random.default_rng(0).normal(0.3, 0.1, 2000)
     lo, hi = bootstrap_ci(values)
     assert lo < values.mean() < hi and hi - lo < 0.02
+
+
+def test_temporal_split_never_puts_same_timestamp_in_two_folds():
+    users = np.zeros(10, int)
+    ts = np.array([1, 2, 3, 4, 5, 6, 7, 8, 8, 8])  # three ratings in the same second at the end
+    fold = temporal_split(users, ts, val_frac=0.1, test_frac=0.2)
+    assert fold[ts == 8].tolist() == [2, 2, 2]
+    for t in np.unique(ts):
+        assert len(set(fold[ts == t])) == 1
+
+
+def test_random_model_gives_different_rows_across_batches():
+    from system.ml.models import RandomModel
+    m = RandomModel(seed=0).fit(sp.csr_matrix((4, 50)), None)
+    assert not np.array_equal(m.score(sp.csr_matrix((1, 50))), m.score(sp.csr_matrix((1, 50))))

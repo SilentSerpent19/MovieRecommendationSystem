@@ -6,6 +6,7 @@ Pipeline: candidates (filters, relaxed one at a time if too few match) -> exclud
 import logging
 from dataclasses import dataclass, field
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import scipy.sparse as sp
@@ -69,13 +70,18 @@ class LoadedModel:
     version: str
 
 
-@lru_cache(maxsize=1)
 def load_model() -> LoadedModel | None:
+    """The model named in MODEL_DIR/LATEST. Re-checked per call, so retraining needs no server restart."""
     version = artifacts.latest_version(settings.MODEL_DIR)
     if version is None:
         log.warning('No trained model in %s; falling back to weighted rating.', settings.MODEL_DIR)
         return None
-    model, item_ids, _ = artifacts.load(settings.MODEL_DIR, version)
+    return _load_version(str(settings.MODEL_DIR), version)
+
+
+@lru_cache(maxsize=2)
+def _load_version(model_dir: str, version: str) -> LoadedModel:
+    model, item_ids, _ = artifacts.load(Path(model_dir), version)
     return LoadedModel(model, {int(m): i for i, m in enumerate(item_ids)}, item_ids, version)
 
 
@@ -115,10 +121,9 @@ def recommend(user, filters: Filters, k: int = 10, session_key: str = '', log_re
         relaxed.append(to_relax.pop(0))
 
     loaded = load_model()
-    if loaded is None or not rows:
+    result = _rank_with_model(loaded, rows, liked, k) if loaded and rows else None
+    if result is None or not result.items:  # no model, or no candidate known to the model
         result = _rank_by_weighted_rating([pk for pk, _ in rows], k)
-    else:
-        result = _rank_with_model(loaded, rows, liked, k)
     result.relaxed = relaxed
     if log_request and result.items:
         _log(result, user, session_key, filters, len(liked))
@@ -133,6 +138,8 @@ def _rank_by_weighted_rating(pks: list[int], k: int) -> Result:
 
 def _rank_with_model(loaded: LoadedModel, rows: list[tuple[int, int]], liked: list[int], k: int) -> Result:
     pk_of = {loaded.index_of[ml]: pk for pk, ml in rows if ml in loaded.index_of}
+    if not pk_of:
+        return Result([])
     candidates = np.fromiter(pk_of, dtype=np.int64)
     liked_ml = dict(Movie.objects.filter(pk__in=liked).values_list('movielens_id', 'title'))
     history = [loaded.index_of[m] for m in liked_ml if m in loaded.index_of]

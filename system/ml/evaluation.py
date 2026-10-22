@@ -1,6 +1,7 @@
 """Offline top-k evaluation on held-out future interactions."""
 import numpy as np
 import scipy.sparse as sp
+from scipy.stats import rankdata
 
 
 def top_k(scores: np.ndarray, exclude: sp.csr_matrix, k: int) -> np.ndarray:
@@ -28,7 +29,7 @@ def evaluate(model, train: sp.csr_matrix, seen: sp.csr_matrix, relevant: sp.csr_
     """
     users = np.flatnonzero(np.diff(relevant.indptr) > 0)
     discounts = 1.0 / np.log2(np.arange(2, k + 2))
-    pop_pct = item_popularity.argsort().argsort() / max(len(item_popularity) - 1, 1)
+    pop_pct = (rankdata(item_popularity, method='average') - 1) / max(len(item_popularity) - 1, 1)
     values = {m: np.zeros(len(users)) for m in METRICS}
     recommended = np.zeros(train.shape[1], bool)
     for start in range(0, len(users), batch):

@@ -157,15 +157,9 @@ MOOD_THRESHOLD = env.float('MOOD_THRESHOLD', default=0.5)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# GDPR/Legal
-GDPR_ENABLED = env.bool('GDPR_ENABLED', default=True)
-
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)  # For development only; restrict in production
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
-
-# OMDb API settings
-OMDB_API_KEY = env('OMDB_API_KEY', default='')
 
 # Authentication settings
 LOGIN_URL = env('LOGIN_URL', default='/login/')

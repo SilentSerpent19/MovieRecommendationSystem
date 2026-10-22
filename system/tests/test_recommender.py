@@ -39,9 +39,9 @@ def trained_model(tmp_path, settings, catalog):
     model = HybridModel(ItemKNNModel(k=5), ContentModel(n_components=4), PopularityModel()).fit(X, genome)
     artifacts.save(model, np.arange(1000, 1000 + N), tmp_path, 'test-v1', {})
     settings.MODEL_DIR = tmp_path
-    recommender.load_model.cache_clear()
+    recommender._load_version.cache_clear()
     yield
-    recommender.load_model.cache_clear()
+    recommender._load_version.cache_clear()
 
 
 @pytest.fixture
@@ -57,11 +57,11 @@ def anon():
 
 def test_falls_back_to_weighted_rating_without_a_model(catalog, settings, tmp_path, anon):
     settings.MODEL_DIR = tmp_path
-    recommender.load_model.cache_clear()
+    recommender._load_version.cache_clear()
     result = recommender.recommend(anon, Filters(), k=3)
     assert result.strategy == 'weighted_rating'
     assert [r.movie.title for r in result.items] == ['Movie 23', 'Movie 22', 'Movie 21']
-    recommender.load_model.cache_clear()
+    recommender._load_version.cache_clear()
 
 
 def test_anonymous_user_gets_popularity_and_request_is_logged(trained_model, anon):
@@ -152,3 +152,10 @@ def test_api_recommend_returns_ranked_results_with_reasons(client, trained_model
     assert data['strategy'] == 'popularity' and len(data['results']) == 4
     assert {'movie', 'score', 'reason'} <= set(data['results'][0])
     assert client.get('/api/recommend/?era=1800s').status_code == 400
+
+
+def test_falls_back_when_no_candidate_is_known_to_the_model(trained_model, anon):
+    Movie.objects.create(movielens_id=999_999, title='Unknown to model', year=2001, ml_rating_mean=4.0,
+                         ml_rating_count=10, weighted_rating=9.9)
+    result = recommender.recommend(anon, Filters(era='2000s'), k=1)
+    assert result.items and result.strategy in {'popularity', 'weighted_rating'}

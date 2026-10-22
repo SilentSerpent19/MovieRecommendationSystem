@@ -18,11 +18,11 @@ class RandomModel:
 
     def fit(self, X: sp.csr_matrix, genome: np.ndarray):
         self.n_items = X.shape[1]
+        self.rng = np.random.default_rng(self.seed)  # one stream, so batches get independent draws
         return self
 
     def score(self, X_users: sp.csr_matrix) -> np.ndarray:
-        rng = np.random.default_rng(self.seed)
-        return rng.random((X_users.shape[0], self.n_items), dtype=np.float32)
+        return self.rng.random((X_users.shape[0], self.n_items), dtype=np.float32)
 
 
 class PopularityModel:

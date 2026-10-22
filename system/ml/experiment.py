@@ -27,6 +27,7 @@ class ExperimentConfig:
     seed: int = 42
     tuning_users: int = 3000  # validation metrics on a seeded subsample keep tuning fast
     cold_start_history: int = 3  # profile length for the cold-start evaluation
+    cold_start_fraction: float = 0.5  # share of users turned into cold-start users (models refit without their history)
     knn_k: tuple = (25, 50, 100, 200)
     knn_shrink: tuple = (0.0, 10.0, 50.0)
     content_components: tuple = (32, 64, 128)
@@ -43,8 +44,17 @@ class Fold:
     popularity: np.ndarray
     order: object  # timestamps of history positives, for building cold-start profiles
 
-    def cold_start(self, n: int) -> 'Fold':
-        return Fold(truncate_history(self.train, self.order, n), self.seen, self.relevant, self.popularity, self.order)
+    def cold_start(self, users: np.ndarray, n: int) -> 'Fold':
+        """Leak-free cold start: `users` keep only their n newest likes *in the training matrix itself*
+        (so models fitted on this fold never see the rest of their history) and only they are evaluated."""
+        cold = np.zeros(self.train.shape[0], bool)
+        cold[users] = True
+        keep_full = sp.diags((~cold).astype(np.float32))
+        keep_cold = sp.diags(cold.astype(np.float32))
+        train = (keep_full @ self.train + keep_cold @ truncate_history(self.train, self.order, n)).tocsr()
+        relevant = (keep_cold @ self.relevant).tocsr()
+        relevant.eliminate_zeros()
+        return Fold(train, self.seen, relevant, np.asarray(train.sum(axis=0)).ravel(), self.order)
 
 
 def make_fold(ds: Dataset, history_mask: np.ndarray, target_mask: np.ndarray, users=None) -> Fold:
@@ -92,15 +102,18 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     tuning['content'] = [{'n_components': n, **r} for n, r in content_results.items()]
 
     log.info('Tuning hybrid blend (objective: mean of full-history and cold-start validation NDCG)')
-    val_cold = val.cold_start(cfg.cold_start_history)
-    knn = ItemKNNModel(*best_knn).fit(val.train, ds.genome)
-    content = ContentModel(best_content, seed=cfg.seed).fit(val.train, ds.genome)
-    pop = PopularityModel().fit(val.train, ds.genome)
+    cold_users = rng.choice(ds.n_users, size=int(cfg.cold_start_fraction * ds.n_users), replace=False)
+    val_cold = val.cold_start(np.intersect1d(cold_users, tune_users), cfg.cold_start_history)
+    fitted = {}
+    for name, fold in (('full', val), ('cold', val_cold)):
+        fitted[name] = (ItemKNNModel(*best_knn).fit(fold.train, ds.genome),
+                        ContentModel(best_content, seed=cfg.seed).fit(fold.train, ds.genome),
+                        PopularityModel().fit(fold.train, ds.genome))
     hybrid_results = {}
     for prior in cfg.history_prior:
         for pw in cfg.popularity_weight:
-            m = HybridModel(knn, content, pop, history_prior=prior, popularity_weight=pw)
-            full, cold = _eval(m, val, cfg.k), _eval(m, val_cold, cfg.k)
+            full = _eval(HybridModel(*fitted['full'], history_prior=prior, popularity_weight=pw), val, cfg.k)
+            cold = _eval(HybridModel(*fitted['cold'], history_prior=prior, popularity_weight=pw), val_cold, cfg.k)
             hybrid_results[(prior, pw)] = {**full, f'cold_start_ndcg@{cfg.k}': cold[f'ndcg@{cfg.k}'],
                                            'objective': round((full[f'ndcg@{cfg.k}'] + cold[f'ndcg@{cfg.k}']) / 2, 4)}
     best_hybrid = max(hybrid_results, key=lambda p: hybrid_results[p]['objective'])
@@ -108,25 +121,26 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
 
     log.info('Final evaluation on the test fold')
     test = make_fold(ds, folds <= 1, folds == 2)
-    final_models = [
-        RandomModel(seed=cfg.seed),
-        PopularityModel(),
-        ContentModel(best_content, seed=cfg.seed),
-        ItemKNNModel(*best_knn),
-        HybridModel(ItemKNNModel(*best_knn), ContentModel(best_content, seed=cfg.seed), PopularityModel(),
-                    history_prior=best_hybrid[0], popularity_weight=best_hybrid[1]),
-    ]
-    test_cold = test.cold_start(cfg.cold_start_history)
+    def final_models():
+        return [
+            RandomModel(seed=cfg.seed),
+            PopularityModel(),
+            ContentModel(best_content, seed=cfg.seed),
+            ItemKNNModel(*best_knn),
+            HybridModel(ItemKNNModel(*best_knn), ContentModel(best_content, seed=cfg.seed), PopularityModel(),
+                        history_prior=best_hybrid[0], popularity_weight=best_hybrid[1]),
+        ]
+
+    test_cold = test.cold_start(cold_users, cfg.cold_start_history)
     results, cold_results, per_user = {}, {}, {}
-    for m in final_models:
-        m.fit(test.train, ds.genome)
-        for name, fold, out in (('full', test, results), ('cold', test_cold, cold_results)):
+    for name, fold, out in (('full', test, results), ('cold', test_cold, cold_results)):
+        for m in final_models():
+            m.fit(fold.train, ds.genome)  # cold fold: models never see the cold users' truncated history
             r = _eval(m, fold, cfg.k, per_user=True)
             per_user[(m.name, name)] = r.pop('_ndcg')
             r[f'ndcg@{cfg.k}_ci95'] = bootstrap_ci(per_user[(m.name, name)], seed=cfg.seed)
             out[m.name] = r
-        log.info('%s: full %s | cold-start %s', m.name, results[m.name][f'ndcg@{cfg.k}'],
-                 cold_results[m.name][f'ndcg@{cfg.k}'])
+            log.info('%s (%s): ndcg %s', m.name, name, r[f'ndcg@{cfg.k}'])
     comparisons = {}
     for a, b in (('item_knn', 'popularity'), ('hybrid', 'popularity'), ('hybrid', 'item_knn'),
                  ('hybrid', 'content')):
@@ -143,6 +157,8 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             'positive_threshold': POSITIVE_THRESHOLD, 'k': cfg.k, 'seed': cfg.seed,
             'tuning_users': len(tune_users), 'selection_metric': f'ndcg@{cfg.k} on validation',
             'cold_start_history': cfg.cold_start_history,
+            'cold_start_users': int(len(cold_users)),
+            'ties': 'interactions sharing the boundary timestamp all go to the later fold',
             'interactions_per_fold': split_sizes,
         },
         'selected_params': {

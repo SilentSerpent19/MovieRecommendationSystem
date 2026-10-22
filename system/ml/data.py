@@ -58,7 +58,8 @@ def temporal_split(users: np.ndarray, timestamps: np.ndarray, val_frac: float, t
     """Per-user chronological split. Returns 0 (train), 1 (validation) or 2 (test) per interaction.
 
     Each user's most recent `test_frac` of interactions is test and the `val_frac` before that is
-    validation, so every model is evaluated on predicting a user's *future* from their past.
+    validation, so every model is evaluated on predicting a user's *future* from their past. Interactions
+    sharing the boundary timestamp all go to the later fold, so folds are strictly ordered in time.
     """
     df = pd.DataFrame({'u': users, 't': timestamps, 'i': np.arange(len(users))})
     df = df.sort_values(['u', 't', 'i'], kind='stable')
@@ -66,9 +67,15 @@ def temporal_split(users: np.ndarray, timestamps: np.ndarray, val_frac: float, t
     n = df.groupby('u')['u'].transform('size').to_numpy()
     n_test = np.ceil(n * test_frac).astype(int)
     n_val = np.ceil(n * val_frac).astype(int)
+    # Cut at the timestamp found at the boundary position, so interactions made in the same second never
+    # straddle two folds (all ties go to the later fold).
+    t = df['t'].to_numpy()
+    start = np.flatnonzero(pos == 0).repeat(np.bincount(np.cumsum(pos == 0) - 1))
+    test_cut = t[start + np.maximum(n - n_test, 0)]
+    val_cut = t[start + np.maximum(n - n_test - n_val, 0)]
     fold = np.zeros(len(df), np.int8)
-    fold[pos >= n - n_test] = 2
-    fold[(pos >= n - n_test - n_val) & (pos < n - n_test)] = 1
+    fold[t >= val_cut] = 1
+    fold[t >= test_cut] = 2
     out = np.empty(len(df), np.int8)
     out[df['i'].to_numpy()] = fold
     return out
