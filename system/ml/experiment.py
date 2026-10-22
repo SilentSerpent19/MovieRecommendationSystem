@@ -33,6 +33,8 @@ class ExperimentConfig:
     content_components: tuple = (32, 64, 128)
     history_prior: tuple = (2.0, 10.0, 50.0)
     popularity_weight: tuple = (0.0, 0.1, 0.3)
+    diversity: tuple = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7)  # MMR trade-off; 0 = plain ranking
+    max_ndcg_loss: float = 0.05  # pick the most diverse setting that keeps >= 95% of the undiversified NDCG
     extra: dict = field(default_factory=dict)
 
 
@@ -72,8 +74,8 @@ def make_fold(ds: Dataset, history_mask: np.ndarray, target_mask: np.ndarray, us
     return Fold(train, seen, relevant, np.asarray(train.sum(axis=0)).ravel(), order)
 
 
-def _eval(model, fold: Fold, k: int, per_user: bool = False) -> dict:
-    return evaluate(model, fold.train, fold.seen, fold.relevant, fold.popularity, k=k, per_user=per_user)
+def _eval(model, fold: Fold, k: int, per_user: bool = False, **kwargs) -> dict:
+    return evaluate(model, fold.train, fold.seen, fold.relevant, fold.popularity, k=k, per_user=per_user, **kwargs)
 
 
 def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
@@ -119,6 +121,16 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     best_hybrid = max(hybrid_results, key=lambda p: hybrid_results[p]['objective'])
     tuning['hybrid'] = [{'history_prior': p[0], 'popularity_weight': p[1], **r} for p, r in hybrid_results.items()]
 
+    log.info('Sweeping MMR diversity on validation')
+    # Genome embeddings depend on no interactions, so using them for ILD and MMR leaks nothing.
+    embeddings = fitted['full'][1].embeddings
+    tuned_hybrid = HybridModel(*fitted['full'], history_prior=best_hybrid[0], popularity_weight=best_hybrid[1])
+    sweep_val = [{'diversity': d, **_eval(tuned_hybrid, val, cfg.k, embeddings=embeddings, diversity=d)}
+                 for d in cfg.diversity]
+    base_ndcg = sweep_val[0][f'ndcg@{cfg.k}']
+    eligible = [r for r in sweep_val if r[f'ndcg@{cfg.k}'] >= (1 - cfg.max_ndcg_loss) * base_ndcg]
+    best_diversity = max(eligible, key=lambda r: r['diversity'])['diversity']
+
     log.info('Final evaluation on the test fold')
     test = make_fold(ds, folds <= 1, folds == 2)
     def final_models():
@@ -136,7 +148,7 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     for name, fold, out in (('full', test, results), ('cold', test_cold, cold_results)):
         for m in final_models():
             m.fit(fold.train, ds.genome)  # cold fold: models never see the cold users' truncated history
-            r = _eval(m, fold, cfg.k, per_user=True)
+            r = _eval(m, fold, cfg.k, per_user=True, embeddings=embeddings)
             per_user[(m.name, name)] = r.pop('_ndcg')
             r[f'ndcg@{cfg.k}_ci95'] = bootstrap_ci(per_user[(m.name, name)], seed=cfg.seed)
             out[m.name] = r
@@ -149,6 +161,15 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             comparisons[f'{a} - {b} ({setting})'] = {
                 f'mean_ndcg@{cfg.k}_diff': round(float(diff.mean()), 4),
                 'ci95': bootstrap_ci(diff, seed=cfg.seed)}
+
+    log.info('Diversity curve on test (served hybrid, full history)')
+    served = next(m for m in final_models() if m.name == 'hybrid').fit(test.train, ds.genome)
+    diversity_test = []
+    for d in cfg.diversity:
+        r = _eval(served, test, cfg.k, per_user=d in (0.0, best_diversity), embeddings=embeddings, diversity=d)
+        if '_ndcg' in r:
+            r[f'ndcg@{cfg.k}_ci95'] = bootstrap_ci(r.pop('_ndcg'), seed=cfg.seed)
+        diversity_test.append({'diversity': d, **r})
 
     split_sizes = {name: int((folds == i).sum()) for i, name in enumerate(['train', 'validation', 'test'])}
     return {
@@ -165,10 +186,18 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             'item_knn': {'k': best_knn[0], 'shrink': best_knn[1]},
             'content': {'n_components': best_content},
             'hybrid': {'history_prior': best_hybrid[0], 'popularity_weight': best_hybrid[1]},
+            'diversity': best_diversity,
         },
         'test_results': results,
         'test_results_cold_start': cold_results,
         'paired_comparisons': comparisons,
+        'diversity': {
+            'rule': (f'largest MMR diversity whose validation ndcg@{cfg.k} is within '
+                     f'{cfg.max_ndcg_loss:.0%} of no re-ranking'),
+            'selected': best_diversity,
+            'validation': sweep_val,
+            'test': diversity_test,
+        },
         'tuning': tuning,
         'data': {'created_at': ds.manifest.get('created_at'), 'n_users': ds.n_users, 'n_items': ds.n_items,
                  'n_interactions': len(ds.users)},

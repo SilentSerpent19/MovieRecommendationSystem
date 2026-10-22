@@ -139,3 +139,22 @@ def test_random_model_gives_different_rows_across_batches():
     from system.ml.models import RandomModel
     m = RandomModel(seed=0).fit(sp.csr_matrix((4, 50)), None)
     assert not np.array_equal(m.score(sp.csr_matrix((1, 50))), m.score(sp.csr_matrix((1, 50))))
+
+
+def test_intra_list_diversity_bounds():
+    from system.ml.evaluation import intra_list_diversity
+    same = np.tile(np.array([[1.0, 0.0]], np.float32), (3, 1))
+    orthogonal = np.eye(3, dtype=np.float32)
+    assert intra_list_diversity(same) == pytest.approx(0.0)
+    assert intra_list_diversity(orthogonal) == pytest.approx(1.0)
+
+
+def test_evaluate_with_diversity_increases_ild(X, genome):
+    content = ContentModel(n_components=4).fit(X, genome)
+    model = PopularityModel().fit(X, genome)
+    relevant = sp.csr_matrix(np.ones((5, 12), np.float32))
+    empty = sp.csr_matrix((5, 12))
+    plain = evaluate(model, X[:5], empty, relevant, np.arange(12.0), k=3, embeddings=content.embeddings)
+    diverse = evaluate(model, X[:5], empty, relevant, np.arange(12.0), k=3, embeddings=content.embeddings,
+                       diversity=0.9, pool=12)
+    assert diverse['ild@3'] >= plain['ild@3']
