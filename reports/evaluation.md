@@ -11,7 +11,7 @@ Protocol: per-user chronological split (10% validation, 20% test per user), posi
 | content | 0.0582 | 0.0448 | 0.0483 | 0.3158 | 0.6506 | 0.7280 | 0.4168 | [0.0561, 0.0604] |
 | item_knn | 0.1253 | 0.0943 | 0.0969 | 0.4811 | 0.2132 | 0.9838 | 0.6261 | [0.1218, 0.1288] |
 | als | 0.1455 | 0.1118 | 0.1146 | 0.5584 | 0.2172 | 0.9714 | 0.7228 | [0.1417, 0.1491] |
-| hybrid | 0.1266 | 0.0959 | 0.0976 | 0.4861 | 0.2272 | 0.9834 | 0.6171 | [0.1227, 0.1300] |
+| hybrid | 0.1483 | 0.1143 | 0.1167 | 0.5643 | 0.2184 | 0.9753 | 0.6987 | [0.1446, 0.1520] |
 
 ## Test: cold start (each user's 3 most recent likes)
 
@@ -22,7 +22,7 @@ Protocol: per-user chronological split (10% validation, 20% test per user), posi
 | content | 0.0514 | 0.0383 | 0.0398 | 0.2777 | 0.8824 | 0.6853 | 0.4032 | [0.0484, 0.0545] |
 | item_knn | 0.1141 | 0.0932 | 0.0856 | 0.4715 | 0.6382 | 0.8821 | 0.6640 | [0.1092, 0.1186] |
 | als | 0.1171 | 0.0941 | 0.0876 | 0.4835 | 0.2344 | 0.9584 | 0.6971 | [0.1122, 0.1218] |
-| hybrid | 0.1151 | 0.0914 | 0.0870 | 0.4758 | 0.6672 | 0.8763 | 0.5883 | [0.1102, 0.1195] |
+| hybrid | 0.1187 | 0.0928 | 0.0896 | 0.4927 | 0.3866 | 0.9421 | 0.5777 | [0.1138, 0.1231] |
 
 ## Paired differences in NDCG (bootstrap 95% CI)
 
@@ -34,12 +34,14 @@ Protocol: per-user chronological split (10% validation, 20% test per user), posi
 | als - popularity (cold) | +0.0379 | [+0.0325, +0.0433] |
 | als - item_knn (full) | +0.0201 | [+0.0173, +0.0228] |
 | als - item_knn (cold) | +0.0029 | [-0.0006, +0.0064] |
-| hybrid - popularity (full) | +0.0476 | [+0.0443, +0.0505] |
-| hybrid - popularity (cold) | +0.0359 | [+0.0308, +0.0407] |
-| hybrid - item_knn (full) | +0.0012 | [+0.0007, +0.0018] |
-| hybrid - item_knn (cold) | +0.0010 | [-0.0011, +0.0029] |
-| hybrid - content (full) | +0.0683 | [+0.0651, +0.0717] |
-| hybrid - content (cold) | +0.0637 | [+0.0595, +0.0677] |
+| hybrid - popularity (full) | +0.0693 | [+0.0657, +0.0727] |
+| hybrid - popularity (cold) | +0.0395 | [+0.0344, +0.0442] |
+| hybrid - als (full) | +0.0029 | [+0.0020, +0.0038] |
+| hybrid - als (cold) | +0.0016 | [-0.0009, +0.0038] |
+| hybrid - item_knn (full) | +0.0230 | [+0.0204, +0.0255] |
+| hybrid - item_knn (cold) | +0.0046 | [+0.0012, +0.0079] |
+| hybrid - content (full) | +0.0901 | [+0.0866, +0.0935] |
+| hybrid - content (cold) | +0.0672 | [+0.0629, +0.0713] |
 
 ## Diversity trade-off (served hybrid, MMR re-ranking of the top 200)
 
@@ -47,13 +49,13 @@ Selection rule: largest MMR diversity whose validation ndcg@10 is within 5% of n
 
 | diversity | validation NDCG | validation ILD | test NDCG | test ILD | test coverage | test popularity pct |
 |---|---|---|---|---|---|---|
-| 0.0 | 0.0998 | 0.6137 | 0.1266 | 0.6171 | 0.2272 | 0.9834 |
-| 0.1 | 0.1007 | 0.6324 | 0.1269 | 0.6359 | 0.2280 | 0.9830 |
-| 0.2 | 0.1009 | 0.6564 | 0.1267 | 0.6603 | 0.2260 | 0.9826 |
-| 0.3 | 0.0996 | 0.6890 | 0.1254 | 0.6920 | 0.2302 | 0.9818 |
-| 0.4 | 0.0971 | 0.7282 | 0.1219 | 0.7305 | 0.2328 | 0.9803 |
-| 0.5 | 0.0917 | 0.7757 | 0.1173 | 0.7768 | 0.2432 | 0.9776 |
-| 0.7 | 0.0733 | 0.9018 | 0.0961 | 0.9021 | 0.2992 | 0.9626 |
+| 0.0 | 0.1163 | 0.6923 | 0.1483 | 0.6987 | 0.2184 | 0.9753 |
+| 0.1 | 0.1159 | 0.7070 | 0.1477 | 0.7138 | 0.2170 | 0.9751 |
+| 0.2 | 0.1149 | 0.7268 | 0.1467 | 0.7335 | 0.2168 | 0.9748 |
+| 0.3 | 0.1136 | 0.7535 | 0.1441 | 0.7602 | 0.2208 | 0.9740 |
+| 0.4 | 0.1109 | 0.7907 | 0.1408 | 0.7982 | 0.2264 | 0.9721 |
+| 0.5 | 0.1048 | 0.8455 | 0.1328 | 0.8510 | 0.2408 | 0.9680 |
+| 0.7 | 0.0799 | 0.9571 | 0.1044 | 0.9604 | 0.3110 | 0.9485 |
 
 ILD = mean pairwise cosine distance between Tag Genome embeddings of the 10 recommended movies.
 
@@ -75,10 +77,10 @@ ILD = mean pairwise cosine distance between Tag Genome embeddings of the 10 reco
   },
   "hybrid": {
     "history_prior": 2.0,
-    "popularity_weight": 0.0
+    "popularity_weight": 0.1
   },
   "diversity": 0.4
 }
 ```
 
-Data: {'created_at': '2026-10-22T13:25:44+00:00', 'n_users': 10000, 'n_items': 5000, 'n_interactions': 1450162}. Runtime: 289.5s.
+Data: {'created_at': '2026-10-22T13:25:44+00:00', 'n_users': 10000, 'n_items': 5000, 'n_interactions': 1450162}. Runtime: 359.5s.
