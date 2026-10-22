@@ -3,16 +3,10 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
-from system.models import Movie, Mood
+from system.models import Genre, Mood
 
 def get_unique_genres():
-    genres = set()
-    for movie in Movie.objects.all():
-        for g in (movie.genre or '').split(','):
-            g = g.strip()
-            if g:
-                genres.add(g)
-    return sorted(genres)
+    return list(Genre.objects.values_list('name', flat=True))
 
 ERA_CHOICES = [
     ('', 'Any'),

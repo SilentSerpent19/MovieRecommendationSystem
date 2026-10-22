@@ -144,6 +144,14 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Data and model artifacts (git-ignored). See system/ml/ and the prepare_data / load_catalog commands.
+DATA_DIR = BASE_DIR / 'data'
+RAW_DATA_DIR = DATA_DIR / 'raw'
+PROCESSED_DATA_DIR = DATA_DIR / 'processed'
+MODEL_DIR = DATA_DIR / 'models'
+# Minimum Tag Genome mood score (0-1) for a movie to carry a mood label.
+MOOD_THRESHOLD = env.float('MOOD_THRESHOLD', default=0.5)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
