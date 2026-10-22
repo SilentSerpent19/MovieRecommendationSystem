@@ -1,28 +1,23 @@
-import random
-
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 
-from system.models import Movie
+from system.recommender import Filters, recommend
 
 
 class Command(BaseCommand):
-    help = 'Send weekly movie recommendations to all users (stub).'
+    help = 'Email each user with an address their top 5 personalised recommendations.'
 
     def handle(self, *args, **options):
-        users = User.objects.all()
-        sample_movies = list(Movie.objects.all())
-        for user in users:
-            if not user.email:
+        sent = 0
+        for user in User.objects.exclude(email=''):
+            result = recommend(user, Filters(), k=5, log_request=False)
+            if not result.items:
                 continue
-            recs = random.sample(sample_movies, min(3, len(sample_movies)))
-            movie_list = '\n'.join([f"- {m.title} ({m.year})" for m in recs])
-            send_mail(
-                'Your Weekly Movie Recommendations',
-                f'Hi {user.username},\n\nHere are your weekly movie picks:\n{movie_list}\n\nEnjoy!\n',
-                'noreply@example.com',
-                [user.email],
-                fail_silently=True,
-            )
-            self.stdout.write(self.style.SUCCESS(f'Sent recs to {user.email}'))
+            lines = '\n'.join(f'- {r.movie} - {r.reason}' for r in result.items)
+            send_mail('Your weekly movie picks',
+                      f'Hi {user.username},\n\nHere are this week\'s picks for you:\n{lines}\n\nEnjoy!\n',
+                      settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+            sent += 1
+        self.stdout.write(self.style.SUCCESS(f'Sent recommendations to {sent} users.'))

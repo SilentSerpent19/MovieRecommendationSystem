@@ -1,53 +1,41 @@
 from django import forms
-from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+
 from system.models import Genre, Mood
+from system.recommender import ERAS, Filters
 
-def get_unique_genres():
-    return list(Genre.objects.values_list('name', flat=True))
+RATING_CHOICES = [('', 'Any'), ('6', '6+'), ('7', '7+'), ('8', '8+')]
 
-ERA_CHOICES = [
-    ('', 'Any'),
-    ('1980s', '1980s'),
-    ('1990s', '1990s'),
-    ('2000s', '2000s'),
-    ('2010s', '2010s'),
-    ('2020s', '2020s'),
-]
-
-RATING_CHOICES = [
-    ('', 'Any'),
-    ('6', '6+'),
-    ('7', '7+'),
-    ('8', '8+'),
-]
 
 class RecommendationForm(forms.Form):
     genre = forms.ChoiceField(choices=[], required=False)
-    era = forms.ChoiceField(choices=ERA_CHOICES, required=False)
-    rating = forms.ChoiceField(choices=RATING_CHOICES, required=False)
+    era = forms.ChoiceField(choices=[('', 'Any')] + [(e, e) for e in ERAS], required=False)
+    rating = forms.ChoiceField(choices=RATING_CHOICES, required=False, label='IMDb rating')
     mood = forms.ChoiceField(choices=[], required=False)
 
     def __init__(self, *args, **kwargs):
-        moods = kwargs.pop('moods', [])
         super().__init__(*args, **kwargs)
-        genre_choices = [('', 'Any')] + [(g, g) for g in get_unique_genres()]
-        self.fields['genre'].choices = genre_choices
-        mood_choices = [('', 'Any')] + [(m.name, m.name) for m in moods]
-        self.fields['mood'].choices = mood_choices
+        self.fields['genre'].choices = [('', 'Any')] + [(g, g) for g in Genre.objects.values_list('name', flat=True)]
+        self.fields['mood'].choices = [('', 'Any')] + [(m, m) for m in Mood.objects.values_list('name', flat=True)]
+
+    def to_filters(self) -> Filters:
+        cd = self.cleaned_data
+        return Filters(genre=cd['genre'], era=cd['era'],
+                       min_rating=float(cd['rating']) if cd['rating'] else None, mood=cd['mood'])
+
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
         'class': 'form-control',
         'placeholder': 'Enter your email address'
     }))
-    
+
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add CSS classes to all fields
@@ -64,11 +52,26 @@ class UserRegistrationForm(UserCreationForm):
                 field.widget.attrs['placeholder'] = 'Confirm your password'
 
 class EditProfileForm(forms.Form):
-    current_password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Current Password', 'class': 'form-control'}), label='Current Password', required=True)
-    username = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Username', 'class': 'form-control'}), label='Username', required=False)
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'Email', 'class': 'form-control'}), label='Email', required=False)
-    new_password1 = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'New Password', 'class': 'form-control'}), label='New Password', required=False)
-    new_password2 = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Confirm New Password', 'class': 'form-control'}), label='Confirm New Password', required=False)
+    current_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Current Password', 'class': 'form-control'}),
+        label='Current Password', required=True,
+    )
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={'placeholder': 'Username', 'class': 'form-control'}),
+        label='Username', required=False,
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'Email', 'class': 'form-control'}),
+        label='Email', required=False,
+    )
+    new_password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'New Password', 'class': 'form-control'}),
+        label='New Password', required=False,
+    )
+    new_password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Confirm New Password', 'class': 'form-control'}),
+        label='Confirm New Password', required=False,
+    )
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,4 +102,4 @@ class EditProfileForm(forms.Form):
                 self.add_error('new_password2', 'Passwords do not match.')
             if new_password1 and len(new_password1) < 8:
                 self.add_error('new_password1', 'Password must be at least 8 characters.')
-        return cleaned_data 
+        return cleaned_data

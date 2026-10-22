@@ -1,89 +1,60 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+  .an-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .an-table th, .an-table td { padding: .4rem .6rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .an-table th:first-child, .an-table td:first-child { text-align: left; }
+  .an-note { font-size: .85rem; opacity: .75; }
+</style>
 <div class="analytics-header">
-  <h1 class="cinema-title">Analytics Dashboard</h1>
-  <p class="cinema-subtitle">See what's trending in the cinephile community.</p>
+  <h1 class="cinema-title">Analytics</h1>
+  <p class="cinema-subtitle">Online behaviour from logged recommendations, next to the offline evaluation.
+    Model: {{ model_version|default:"none trained" }}</p>
 </div>
-{% if messages %}
-  <ul class="messages cinema-alert">{% for message in messages %}<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>{% endfor %}</ul>
-{% endif %}
+
 <div class="analytics-cards">
-  <div class="analytics-card glass">
-    <h4>Most Watchlisted Movies (All Time)</h4>
-    <ul class="analytics-list">
-      {% for movie, count in popular_movies %}
-        <li>{{ movie.title }} ({{ movie.year }}) <span class="analytics-badge">{{ count }}</span></li>
+  <div class="analytics-card glass" style="grid-column: 1 / -1;">
+    <h4>Online: served recommendations by strategy</h4>
+    <table class="an-table">
+      <tr><th>strategy</th><th>requests</th><th>impressions</th><th>likes + saves</th><th>action rate</th><th>relaxed filters</th></tr>
+      {% for row in by_strategy %}
+        <tr><td>{{ row.strategy }}</td><td>{{ row.requests }}</td><td>{{ row.impressions }}</td>
+            <td>{{ row.positive_actions }}</td><td>{{ row.action_rate|floatformat:3 }}</td><td>{{ row.relaxed }}</td></tr>
       {% empty %}
-        <li>No data.</li>
+        <tr><td colspan="6">No recommendations served yet.</td></tr>
       {% endfor %}
+    </table>
+    <p class="an-note">Action rate = likes and watchlist adds attributed to a list ÷ movies shown in those lists.
+      Events: {% for action, n in events.items %}{{ action }} {{ n }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}.</p>
+  </div>
+
+  {% if report %}
+  <div class="analytics-card glass" style="grid-column: 1 / -1;">
+    <h4>Offline: test-set evaluation ({{ report.protocol.split }} split, k = {{ report.protocol.k }})</h4>
+    <table class="an-table">
+      <tr><th>model</th><th>NDCG</th><th>recall</th><th>hit rate</th><th>coverage</th><th>cold-start NDCG</th></tr>
+      {% for r in offline %}
+        <tr><td>{{ r.model }}</td><td>{{ r.ndcg|floatformat:4 }}</td><td>{{ r.recall|floatformat:4 }}</td>
+            <td>{{ r.hit_rate|floatformat:4 }}</td><td>{{ r.coverage|floatformat:4 }}</td><td>{{ r.cold_ndcg|floatformat:4 }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="an-note">Full report with confidence intervals: <code>reports/evaluation.md</code>.</p>
+  </div>
+  {% endif %}
+
+  <div class="analytics-card glass">
+    <h4>Most recommended</h4>
+    <ul class="analytics-list">
+      {% for m in top_recommended %}<li>{{ m.movie__title }} ({{ m.movie__year }}) <span class="analytics-badge">{{ m.n }}</span></li>
+      {% empty %}<li>No data.</li>{% endfor %}
     </ul>
   </div>
   <div class="analytics-card glass">
-    <h4>Trending Movies (Last 30 Days)</h4>
+    <h4>Most liked</h4>
     <ul class="analytics-list">
-      {% for movie, count in trending_movies %}
-        <li>{{ movie.title }} ({{ movie.year }}) <span class="analytics-badge">{{ count }}</span></li>
-      {% empty %}
-        <li>No data.</li>
-      {% endfor %}
+      {% for m in top_liked %}<li>{{ m.movie__title }} ({{ m.movie__year }}) <span class="analytics-badge">{{ m.n }}</span></li>
+      {% empty %}<li>No data.</li>{% endfor %}
     </ul>
-  </div>
-  <div class="analytics-card glass">
-    <h4>Most Watchlisted Genres (All Time)</h4>
-    <ul class="analytics-list">
-      {% for genre, count in popular_genres %}
-        <li>{{ genre }} <span class="analytics-badge">{{ count }}</span></li>
-      {% empty %}
-        <li>No data.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="analytics-card glass">
-    <h4>Trending Genres (Last 30 Days)</h4>
-    <ul class="analytics-list">
-      {% for genre, count in trending_genres %}
-        <li>{{ genre }} <span class="analytics-badge">{{ count }}</span></li>
-      {% empty %}
-        <li>No data.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="analytics-card glass">
-    <h4>Most Recommended Movies</h4>
-    <ul class="analytics-list">
-      {% for movie, count in most_rec_movies %}
-        <li>{{ movie.title }} ({{ movie.year }}) <span class="analytics-badge">{{ count }}</span></li>
-      {% empty %}
-        <li>No data.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="analytics-card glass">
-    <h4>Most Recommended Genres</h4>
-    <ul class="analytics-list">
-      {% for genre, count in most_rec_genres %}
-        <li>{{ genre }} <span class="analytics-badge">{{ count }}</span></li>
-      {% empty %}
-        <li>No data.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="analytics-card glass">
-    <h4>Most Active Users (Watchlist Adds)</h4>
-    <ul class="analytics-list">
-      {% for user, count in most_active_users %}
-        <li>{{ user.username }} <span class="analytics-badge">{{ count }}</span></li>
-      {% empty %}
-        <li>No data.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="analytics-card glass">
-    <h4>Average IMDb Rating of Watchlisted Movies</h4>
-    <div style="font-size:1.5rem;font-weight:700;color:#ffd700;">
-      {% if avg_rating %}{{ avg_rating|floatformat:2 }}{% else %}N/A{% endif %}
-    </div>
   </div>
 </div>
-<a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-secondary mt-3">Back to Recommendations</a>
-{% endblock %} 
+{% endblock %}

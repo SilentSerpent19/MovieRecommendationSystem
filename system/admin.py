@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from .models import CuratedList, Genre, Mood, Movie, MovieMood, UserInteraction, Watchlist
+from .models import (
+    CuratedList,
+    Event,
+    Feedback,
+    Genre,
+    Impression,
+    Mood,
+    Movie,
+    MovieMood,
+    RecommendationRequest,
+    Watchlist,
+)
 
 
 class MovieMoodInline(admin.TabularInline):
@@ -27,12 +38,30 @@ class MoodAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-@admin.register(UserInteraction)
-class UserInteractionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'movie', 'action', 'timestamp')
-    list_filter = ('action', 'timestamp')
+class ImpressionInline(admin.TabularInline):
+    model = Impression
+    extra = 0
+    readonly_fields = ('movie', 'rank', 'score')
+
+
+@admin.register(RecommendationRequest)
+class RecommendationRequestAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'user', 'strategy', 'model_version', 'history_size', 'filters', 'relaxed')
+    list_filter = ('strategy', 'model_version')
+    inlines = [ImpressionInline]
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'user', 'action', 'movie', 'request')
+    list_filter = ('action',)
     search_fields = ('user__username', 'movie__title')
-    ordering = ('-timestamp',)
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('user', 'movie', 'value', 'updated_at')
+    list_filter = ('value',)
 
 
 @admin.register(Watchlist)

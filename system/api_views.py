@@ -1,9 +1,13 @@
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
 from rest_framework import generics, permissions, status, views, viewsets
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from .models import Movie, Watchlist, CuratedList
-from .serializers import UserSerializer, MovieSerializer, WatchlistSerializer, CuratedListSerializer
+
+from .forms import RecommendationForm
+from .models import CuratedList, Watchlist
+from .recommender import recommend
+from .serializers import CuratedListSerializer, MovieSerializer, UserSerializer, WatchlistSerializer
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -28,16 +32,25 @@ class ProfileView(generics.RetrieveAPIView):
         return self.request.user
 
 class MovieRecommendationView(views.APIView):
+    """GET /api/recommend/?genre=&era=&rating=&mood=&k= -> ranked movies with reasons."""
+
     permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
-        genre = request.query_params.get('genre')
-        era = request.query_params.get('era')
-        rating = request.query_params.get('rating')
-        # Use your decision tree logic here
-        from .views import recommend_movies
-        recs, _ = recommend_movies(genre, era, rating)
-        serializer = MovieSerializer(recs, many=True)
-        return Response(serializer.data)
+        form = RecommendationForm(request.query_params)
+        if not form.is_valid():
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+        k = min(max(int(request.query_params.get('k', 10)), 1), 50)
+        result = recommend(request.user, form.to_filters(), k=k, session_key=request.session.session_key or '')
+        return Response({
+            'request_id': result.request_id,
+            'strategy': result.strategy,
+            'model_version': result.model_version,
+            'relaxed_filters': result.relaxed,
+            'results': [{'movie': MovieSerializer(r.movie).data, 'score': r.score, 'reason': r.reason}
+                        for r in result.items],
+        })
+
 
 class WatchlistViewSet(viewsets.ModelViewSet):
     serializer_class = WatchlistSerializer
@@ -51,9 +64,3 @@ class CuratedListViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CuratedList.objects.filter(is_active=True)
     serializer_class = CuratedListSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-class AnalyticsView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    def get(self, request):
-        # Stub: return sample analytics data
-        return Response({'by_era': {'1980s': 12, '1990s': 19, '2000s': 7, '2010s': 14, '2020s': 9}})

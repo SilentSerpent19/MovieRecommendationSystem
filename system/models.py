@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -58,12 +60,54 @@ class MovieMood(models.Model):
         indexes = [models.Index(fields=['mood', '-score'])]
 
 
-class UserInteraction(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    action = models.CharField(max_length=100)
-    movie = models.ForeignKey(Movie, on_delete=models.SET_NULL, null=True, blank=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    extra_data = models.JSONField(default=dict, blank=True)
+class Feedback(models.Model):
+    """Explicit like/dislike. Likes (with watchlist items) form the user's history for the recommender."""
+
+    LIKE, DISLIKE = 1, -1
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.PROTECT)
+    value = models.SmallIntegerField(choices=[(LIKE, 'like'), (DISLIKE, 'dislike')])
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'movie'], name='unique_feedback')]
+
+
+class RecommendationRequest(models.Model):
+    """One served recommendation list, with everything needed to reproduce and evaluate it."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    session_key = models.CharField(max_length=40, blank=True)
+    filters = models.JSONField(default=dict)
+    relaxed = models.JSONField(default=list, help_text='Filters dropped because too few movies matched')
+    strategy = models.CharField(max_length=30)
+    model_version = models.CharField(max_length=30, blank=True)
+    history_size = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class Impression(models.Model):
+    request = models.ForeignKey(RecommendationRequest, on_delete=models.CASCADE, related_name='impressions')
+    movie = models.ForeignKey(Movie, on_delete=models.PROTECT)
+    rank = models.PositiveSmallIntegerField()
+    score = models.FloatField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['request', 'rank'], name='unique_impression_rank')]
+
+
+class Event(models.Model):
+    """A user action on a movie, attributed to the recommendation list it came from when known."""
+
+    LIKE, DISLIKE, WATCHLIST_ADD, WATCHLIST_REMOVE = 'like', 'dislike', 'watchlist_add', 'watchlist_remove'
+    ACTIONS = [(a, a) for a in (LIKE, DISLIKE, WATCHLIST_ADD, WATCHLIST_REMOVE)]
+    request = models.ForeignKey(RecommendationRequest, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='events')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    movie = models.ForeignKey(Movie, on_delete=models.PROTECT)
+    action = models.CharField(max_length=20, choices=ACTIONS)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
 
 class Watchlist(models.Model):
