@@ -1,0 +1,12 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "decision.settings"
+testpaths = ["system/tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["system/migrations", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

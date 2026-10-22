@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Movie, Watchlist, CuratedList, SubscriptionPlan, UserSubscription
+from .models import Movie, Watchlist, CuratedList
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,14 +23,3 @@ class CuratedListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuratedList
         fields = ['id', 'title', 'description', 'movies', 'is_active']
-
-class SubscriptionPlanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SubscriptionPlan
-        fields = ['id', 'name', 'price', 'description', 'is_active']
-
-class UserSubscriptionSerializer(serializers.ModelSerializer):
-    plan = SubscriptionPlanSerializer(read_only=True)
-    class Meta:
-        model = UserSubscription
-        fields = ['id', 'plan', 'active', 'started_at', 'expires_at'] 

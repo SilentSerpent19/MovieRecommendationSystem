@@ -2,8 +2,8 @@ from rest_framework import generics, permissions, status, views, viewsets
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from .models import Movie, Watchlist, CuratedList, SubscriptionPlan, UserSubscription
-from .serializers import UserSerializer, MovieSerializer, WatchlistSerializer, CuratedListSerializer, SubscriptionPlanSerializer, UserSubscriptionSerializer
+from .models import Movie, Watchlist, CuratedList
+from .serializers import UserSerializer, MovieSerializer, WatchlistSerializer, CuratedListSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -57,14 +57,3 @@ class AnalyticsView(views.APIView):
     def get(self, request):
         # Stub: return sample analytics data
         return Response({'by_era': {'1980s': 12, '1990s': 19, '2000s': 7, '2010s': 14, '2020s': 9}})
-
-class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = SubscriptionPlan.objects.filter(is_active=True)
-    serializer_class = SubscriptionPlanSerializer
-    permission_classes = [permissions.AllowAny]
-
-class UserSubscriptionView(generics.RetrieveAPIView):
-    serializer_class = UserSubscriptionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    def get_object(self):
-        return UserSubscription.objects.get(user=self.request.user) 

@@ -70,14 +70,6 @@
   <div class="profile-avatar">🎬</div>
   <div class="profile-info">
     <div class="profile-username">{{ user.username }}</div>
-    {% if user_sub and user_sub.active %}
-      <div class="profile-badge">{{ user_sub.plan.name }} <span class="badge-active">Active</span></div>
-      <div class="profile-expiry">Expires: {{ user_sub.expires_at|date:'Y-m-d H:i' }}</div>
-      <a href="{% url 'manage_payment_method' %}" class="cinema-btn cinema-btn-outline mt-2">Manage Payment Method</a>
-    {% else %}
-      <div class="profile-badge badge-inactive">No active subscription</div>
-      <a href="{% url 'subscribe' %}" class="cinema-btn cinema-btn-primary">Upgrade to Premium</a>
-    {% endif %}
   </div>
 </div>
 <div class="profile-actions" style="margin-top:2rem;text-align:center;">

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from system.models import Movie, Watchlist, CuratedList, Mood, UserSubscription, SubscriptionPlan, UserInteraction
+from system.models import Movie, Watchlist, CuratedList, Mood, UserInteraction
 from django.contrib.auth.models import User
 
 from django.contrib.auth import login, authenticate
@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
 from django.http import JsonResponse
-from paypal.standard.forms import PayPalPaymentsForm
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -89,15 +88,6 @@ def recommend_movies(user_genre, user_era, user_rating, user_mood=None, n_result
     fallback = sorted(movies, key=lambda m: smart_score(m, user_genre, user_era, user_rating), reverse=True)
     return fallback[:n_results], True
 
-def is_premium(user):
-    if not user.is_authenticated:
-        return False
-    try:
-        sub = UserSubscription.objects.get(user=user)
-        return sub.active and (not sub.expires_at or sub.expires_at > timezone.now())
-    except UserSubscription.DoesNotExist:
-        return False
-
 def login_redirect_view(request):
     if request.user.is_authenticated:
         return redirect('recommend')
@@ -132,49 +122,6 @@ def register_view(request):
     else:
         form = UserRegistrationForm()
     return render(request, 'register.html', {'form': form})
-
-@login_required
-def subscribe_view(request):
-    plans = SubscriptionPlan.objects.all()
-    try:
-        user_sub = UserSubscription.objects.get(user=request.user, active=True)
-        plan = user_sub.plan
-        messages.info(request, f'You are already subscribed to {plan.name}.')
-    except UserSubscription.DoesNotExist:
-        user_sub = None
-        if request.method == 'POST':
-            plan_id = request.POST.get('plan_id')
-            if plan_id:
-                plan = SubscriptionPlan.objects.get(id=plan_id)
-                messages.success(request, f'Subscribed to {plan.name}!')
-                return render(request, 'subscribe.html', {'plans': plans, 'user_sub': user_sub})
-    return render(request, 'subscribe.html', {'plans': plans, 'user_sub': user_sub})
-
-@login_required
-def paypal_payment(request, plan_id):
-    plan = SubscriptionPlan.objects.get(id=plan_id)
-    paypal_dict = {
-        'business': settings.PAYPAL_RECEIVER_EMAIL,
-        'amount': str(plan.price),
-        'item_name': plan.name,
-        'invoice': f'{request.user.id}-{plan.id}-{datetime.now().timestamp()}',
-        'currency_code': 'USD',
-        'notify_url': request.build_absolute_uri(reverse('paypal-ipn')),
-        'return_url': request.build_absolute_uri(reverse('paypal_success')),
-        'cancel_return': request.build_absolute_uri(reverse('paypal_cancel')),
-        'custom': f'{request.user.id}:{plan.id}',
-    }
-    form = PayPalPaymentsForm(initial=paypal_dict)
-    return render(request, 'paypal_payment.html', {'form': form, 'plan': plan})
-
-def paypal_success(request):
-    user_sub = None
-    if request.user.is_authenticated:
-        user_sub = UserSubscription.objects.filter(user=request.user, active=True).first()
-    return render(request, 'subscribe_success.html', {'user_sub': user_sub})
-
-def paypal_cancel(request):
-    return render(request, 'subscribe_cancel.html')
 
 MOOD_GENRE_MAP = {
     'funny': ['Comedy', 'Animation', 'Musical'],
@@ -243,20 +190,6 @@ def recommend_view(request):
     else:
         form = RecommendationForm(moods=moods)
     print(f"[DEBUG] FINAL: genre={genre}, era={era}, rating={rating}, mood={mood}, current_index={current_index}")
-    user_is_premium = is_premium(request.user)
-    user_is_pro = False
-    if user_is_premium:
-        user_sub = UserSubscription.objects.filter(user=request.user, active=True).first()
-        if user_sub and user_sub.plan.name == 'Pro':
-            user_is_pro = True
-    daily_limit = 5
-    show_ads = not user_is_premium
-    show_upgrade = not user_is_premium
-    if not user_is_premium:
-        rec_count = request.session.get('rec_count', 0)
-        if rec_count >= daily_limit:
-            return render(request, 'limit_reached.html', {'show_upgrade': show_upgrade})
-        request.session['rec_count'] = rec_count + 1
     if request.user.is_authenticated:
         UserInteraction.objects.create(user=request.user, action='view_recommendation')
     recommendations_json = json.dumps([
@@ -283,10 +216,6 @@ def recommend_view(request):
         'mood': mood,
         'current_index': current_index,
         'fallback_used': fallback_used,
-        'show_ads': show_ads,
-        'show_upgrade': show_upgrade,
-        'user_is_premium': user_is_premium,
-        'user_is_pro': user_is_pro,
         'moods': moods,
         'mood_genre_map': mood_genre_map,
         'selected_mood': mood,
@@ -294,23 +223,14 @@ def recommend_view(request):
 
 @login_required
 def profile_view(request):
-    try:
-        user_sub = UserSubscription.objects.get(user=request.user)
-    except UserSubscription.DoesNotExist:
-        user_sub = None
-    return render(request, 'profile.html', {'user_sub': user_sub})
+    return render(request, 'profile.html')
 
 @login_required
 def add_to_watchlist(request, movie_id):
     user = request.user
     movie = get_object_or_404(Movie, id=movie_id)
-    user_sub = UserSubscription.objects.filter(user=user, active=True).first()
-    limit = 5 if not user_sub or user_sub.plan.name == 'Basic' else None
-    if limit and Watchlist.objects.filter(user=user).count() >= limit:
-        messages.error(request, 'Watchlist limit reached. Upgrade for more!')
-    else:
-        Watchlist.objects.get_or_create(user=user, movie=movie)
-        messages.success(request, f'Added {movie.title} to your watchlist!')
+    Watchlist.objects.get_or_create(user=user, movie=movie)
+    messages.success(request, f'Added {movie.title} to your watchlist!')
     return redirect('recommend')
 
 @login_required
@@ -403,93 +323,6 @@ def analytics_dashboard(request):
 
 def privacy_policy_view(request):
     return render(request, 'privacy_policy.html')
-
-@require_http_methods(["POST"])
-@csrf_exempt
-def secure_payment(request):
-    data = json.loads(request.body)
-    amount = data['amount']
-    currency = data['currency']
-    description = data['description']
-    return JsonResponse({'status': 'success', 'message': 'Payment processed successfully'})
-
-@login_required
-def secure_payment_view(request, plan_id):
-    plan = get_object_or_404(SubscriptionPlan, id=plan_id)
-    
-    if request.method == 'POST':
-        try:
-            UserSubscription.objects.filter(user=request.user).update(active=False)
-            now = timezone.now()
-            if plan.duration == 'monthly':
-                expires_at = now + timedelta(days=30)
-            elif plan.duration == 'yearly':
-                expires_at = now + timedelta(days=365)
-            elif plan.duration == 'lifetime':
-                expires_at = None
-            else:
-                expires_at = None
-            UserSubscription.objects.update_or_create(
-                user=request.user,
-                defaults={'plan': plan, 'active': True, 'started_at': now, 'expires_at': expires_at}
-            )
-            messages.success(request, f'Payment successful! You are now subscribed to {plan.name}.')
-            return redirect('paypal_success')
-        except Exception as e:
-            messages.error(request, f'Payment failed: {str(e)}')
-            return redirect('paypal_cancel')
-    
-    return render(request, 'secure_payment.html', {
-        'plan': plan,
-        'amount': plan.price,
-        'currency': 'USD'
-    })
-
-@require_http_methods(["POST"])
-@csrf_exempt
-def process_payment(request):
-    try:
-        data = json.loads(request.body)
-        plan_id = data.get('plan_id')
-        plan = get_object_or_404(SubscriptionPlan, id=plan_id)
-        now = timezone.now()
-        if plan.duration == 'monthly':
-            expires_at = now + timedelta(days=30)
-        elif plan.duration == 'yearly':
-            expires_at = now + timedelta(days=365)
-        elif plan.duration == 'lifetime':
-            expires_at = None
-        else:
-            expires_at = None
-        UserSubscription.objects.filter(user=request.user).update(active=False)
-        UserSubscription.objects.update_or_create(
-            user=request.user,
-            defaults={'plan': plan, 'active': True, 'started_at': now, 'expires_at': expires_at}
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Payment processed successfully',
-            'redirect_url': reverse('paypal_success')
-        })
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=400)
-
-@login_required
-def manage_payment_method(request):
-    """
-    In production, this view should redirect the user to your payment provider's (e.g., PayPal, Stripe) secure payment method management page.
-    You should NOT handle or store card details yourself.
-    For PayPal: Use PayPal's Vault or Billing Agreements API to let users update their card securely.
-    For Stripe: Use Stripe's customer portal or setup_intent/session to let users update their card securely.
-    
-    For now, this is a placeholder for testing. Replace with a real redirect in production.
-    """
-    # Example for production (uncomment and implement):
-    # return redirect(payment_provider_generate_update_url(request.user))
-    return render(request, 'manage_payment_method.html', {})
 
 @require_http_methods(["POST"])
 @csrf_exempt

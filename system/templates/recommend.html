@@ -64,7 +64,6 @@
           {{ form.rating|add_class:'filter-select' }}
         </div>
 
-        {% if user_is_premium or user_is_pro %}
         <div class="filter-group">
           <label for="id_mood" class="filter-label">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -75,7 +74,6 @@
           </label>
           {{ form.mood|add_class:'filter-select' }}
         </div>
-        {% endif %}
       </div>
 
       <div class="filter-actions">

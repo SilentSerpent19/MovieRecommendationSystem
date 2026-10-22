@@ -114,9 +114,6 @@
         <li class="nav-item ms-3">
           <span class="navbar-user fw-bold text-warning">Welcome, {{ user.username }}!</span>
         </li>
-        <li class="nav-item ms-2">
-          <a href="{% url 'subscribe' %}" class="btn btn-warning btn-sm fw-bold">Subscribe</a>
-        </li>
         <li class="nav-item dropdown ms-2">
           <a class="nav-link settings-trigger" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Settings">
             <div class="settings-icon">
@@ -134,13 +131,6 @@
                 </div>
                 <div class="settings-user-info">
                   <div class="settings-username">{{ user.username }}</div>
-                  <div class="settings-role">
-                    {% if user_is_premium or user_is_pro %}
-                      <span class="badge badge-premium">Premium</span>
-                    {% else %}
-                      <span class="badge badge-basic">Basic</span>
-                    {% endif %}
-                  </div>
                 </div>
               </div>
             </li>

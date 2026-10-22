@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Movie, Mood, UserInteraction, Watchlist, CuratedList, SubscriptionPlan, UserSubscription
+from .models import Movie, Mood, UserInteraction, Watchlist, CuratedList
 
 # Register your models here.
 
@@ -36,17 +36,3 @@ class CuratedListAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('title', 'description')
     ordering = ('title',)
-
-@admin.register(SubscriptionPlan)
-class SubscriptionPlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'duration', 'is_active')
-    list_filter = ('is_active',)
-    search_fields = ('name', 'description')
-    ordering = ('name',)
-
-@admin.register(UserSubscription)
-class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'plan', 'active', 'started_at', 'expires_at')
-    list_filter = ('active', 'started_at', 'expires_at')
-    search_fields = ('user__username', 'plan__name')
-    ordering = ('-started_at',)

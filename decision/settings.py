@@ -45,8 +45,6 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'rest_framework',
     'corsheaders',
-    'paypal.standard.ipn',
-    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -157,10 +155,6 @@ GDPR_ENABLED = env.bool('GDPR_ENABLED', default=True)
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)  # For development only; restrict in production
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
-
-# PayPal settings
-PAYPAL_RECEIVER_EMAIL = env('PAYPAL_RECEIVER_EMAIL', default='your-paypal-business-email@example.com')
-PAYPAL_TEST = env.bool('PAYPAL_TEST', default=True)  # Set to False for production
 
 # OMDb API settings
 OMDB_API_KEY = env('OMDB_API_KEY', default='')
