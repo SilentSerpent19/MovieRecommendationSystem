@@ -158,3 +158,30 @@ def test_evaluate_with_diversity_increases_ild(X, genome):
     diverse = evaluate(model, X[:5], empty, relevant, np.arange(12.0), k=3, embeddings=content.embeddings,
                        diversity=0.9, pool=12)
     assert diverse['ild@3'] >= plain['ild@3']
+
+
+def test_als_solve_matches_dense_normal_equations():
+    from system.ml.models import ALSModel
+    rng = np.random.default_rng(3)
+    F = rng.normal(size=(15, 4)).astype(np.float32)
+    R = sp.csr_matrix((rng.random((3, 15)) < 0.4).astype(np.float32))
+    model = ALSModel(factors=4, reg=0.5, alpha=10.0)
+    got = model._solve(R, F)
+    F64 = F.astype(np.float64)
+    for u in range(3):
+        p = R[u].toarray().ravel()
+        C = np.diag(1 + 10.0 * p)  # full confidence matrix, written out explicitly
+        expected = np.linalg.solve(F64.T @ C @ F64 + 0.5 * np.eye(4), F64.T @ C @ p)
+        np.testing.assert_allclose(got[u], expected, rtol=1e-4, atol=1e-6)
+
+
+def test_als_learns_block_structure_and_handles_empty_history():
+    from system.ml.models import ALSModel
+    dense = np.zeros((40, 10), np.float32)
+    dense[:20, :5] = (np.random.default_rng(0).random((20, 5)) < 0.7)
+    dense[20:, 5:] = (np.random.default_rng(1).random((20, 5)) < 0.7)
+    model = ALSModel(factors=2, reg=0.1, alpha=10.0, iterations=10).fit(sp.csr_matrix(dense), None)
+    scores = model.score(sp.csr_matrix(np.array([[1, 1, 0, 0, 0, 0, 0, 0, 0, 0]], np.float32)))[0]
+    assert scores[2:5].mean() > scores[5:].mean()  # unseen items from the user's block score higher
+    assert 2 <= np.argmax(scores[2:]) + 2 <= 4
+    assert not model.score(sp.csr_matrix((1, 10))).any()

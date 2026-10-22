@@ -25,6 +25,11 @@
     "content": {
       "n_components": 128
     },
+    "als": {
+      "factors": 64,
+      "alpha": 2.0,
+      "reg": 30.0
+    },
     "hybrid": {
       "history_prior": 2.0,
       "popularity_weight": 0.0
@@ -86,6 +91,20 @@
       "ndcg@10_ci95": [
         0.1218,
         0.1288
+      ]
+    },
+    "als": {
+      "precision@10": 0.1146,
+      "recall@10": 0.1118,
+      "ndcg@10": 0.1455,
+      "hit_rate@10": 0.5584,
+      "popularity_percentile@10": 0.9714,
+      "ild@10": 0.7228,
+      "coverage": 0.2172,
+      "users_evaluated": 9817,
+      "ndcg@10_ci95": [
+        0.1417,
+        0.1491
       ]
     },
     "hybrid": {
@@ -160,6 +179,20 @@
         0.1186
       ]
     },
+    "als": {
+      "precision@10": 0.0876,
+      "recall@10": 0.0941,
+      "ndcg@10": 0.1171,
+      "hit_rate@10": 0.4835,
+      "popularity_percentile@10": 0.9584,
+      "ild@10": 0.6971,
+      "coverage": 0.2344,
+      "users_evaluated": 4912,
+      "ndcg@10_ci95": [
+        0.1122,
+        0.1218
+      ]
+    },
     "hybrid": {
       "precision@10": 0.087,
       "recall@10": 0.0914,
@@ -188,6 +221,34 @@
       "ci95": [
         0.0298,
         0.0397
+      ]
+    },
+    "als - popularity (full)": {
+      "mean_ndcg@10_diff": 0.0665,
+      "ci95": [
+        0.0624,
+        0.07
+      ]
+    },
+    "als - popularity (cold)": {
+      "mean_ndcg@10_diff": 0.0379,
+      "ci95": [
+        0.0325,
+        0.0433
+      ]
+    },
+    "als - item_knn (full)": {
+      "mean_ndcg@10_diff": 0.0201,
+      "ci95": [
+        0.0173,
+        0.0228
+      ]
+    },
+    "als - item_knn (cold)": {
+      "mean_ndcg@10_diff": 0.0029,
+      "ci95": [
+        -0.0006,
+        0.0064
       ]
     },
     "hybrid - popularity (full)": {
@@ -573,6 +634,188 @@
         "explained_variance": 0.774
       }
     ],
+    "als": [
+      {
+        "factors": 32,
+        "alpha": 1.0,
+        "reg": 1.0,
+        "precision@10": 0.0681,
+        "recall@10": 0.1269,
+        "ndcg@10": 0.1101,
+        "hit_rate@10": 0.4143,
+        "popularity_percentile@10": 0.9776,
+        "coverage": 0.1754,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 32,
+        "alpha": 2.0,
+        "reg": 1.0,
+        "precision@10": 0.0683,
+        "recall@10": 0.1265,
+        "ndcg@10": 0.1098,
+        "hit_rate@10": 0.412,
+        "popularity_percentile@10": 0.9759,
+        "coverage": 0.1934,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 32,
+        "alpha": 5.0,
+        "reg": 1.0,
+        "precision@10": 0.0676,
+        "recall@10": 0.1244,
+        "ndcg@10": 0.1077,
+        "hit_rate@10": 0.4088,
+        "popularity_percentile@10": 0.9722,
+        "coverage": 0.2326,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 32,
+        "alpha": 20.0,
+        "reg": 1.0,
+        "precision@10": 0.0612,
+        "recall@10": 0.1143,
+        "ndcg@10": 0.097,
+        "hit_rate@10": 0.3876,
+        "popularity_percentile@10": 0.9602,
+        "coverage": 0.324,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 1.0,
+        "reg": 1.0,
+        "precision@10": 0.068,
+        "recall@10": 0.1253,
+        "ndcg@10": 0.11,
+        "hit_rate@10": 0.4265,
+        "popularity_percentile@10": 0.9685,
+        "coverage": 0.2088,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 2.0,
+        "reg": 1.0,
+        "precision@10": 0.0685,
+        "recall@10": 0.1277,
+        "ndcg@10": 0.111,
+        "hit_rate@10": 0.4291,
+        "popularity_percentile@10": 0.9668,
+        "coverage": 0.2302,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 5.0,
+        "reg": 1.0,
+        "precision@10": 0.0681,
+        "recall@10": 0.1293,
+        "ndcg@10": 0.1098,
+        "hit_rate@10": 0.4272,
+        "popularity_percentile@10": 0.9633,
+        "coverage": 0.269,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 20.0,
+        "reg": 1.0,
+        "precision@10": 0.0621,
+        "recall@10": 0.1214,
+        "ndcg@10": 0.1002,
+        "hit_rate@10": 0.4028,
+        "popularity_percentile@10": 0.9542,
+        "coverage": 0.352,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 128,
+        "alpha": 1.0,
+        "reg": 1.0,
+        "precision@10": 0.062,
+        "recall@10": 0.1159,
+        "ndcg@10": 0.1007,
+        "hit_rate@10": 0.4066,
+        "popularity_percentile@10": 0.9546,
+        "coverage": 0.2542,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 128,
+        "alpha": 2.0,
+        "reg": 1.0,
+        "precision@10": 0.0632,
+        "recall@10": 0.1194,
+        "ndcg@10": 0.103,
+        "hit_rate@10": 0.4147,
+        "popularity_percentile@10": 0.9533,
+        "coverage": 0.2718,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 128,
+        "alpha": 5.0,
+        "reg": 1.0,
+        "precision@10": 0.0644,
+        "recall@10": 0.1242,
+        "ndcg@10": 0.1053,
+        "hit_rate@10": 0.4248,
+        "popularity_percentile@10": 0.9506,
+        "coverage": 0.3124,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 128,
+        "alpha": 20.0,
+        "reg": 1.0,
+        "precision@10": 0.0589,
+        "recall@10": 0.1161,
+        "ndcg@10": 0.0973,
+        "hit_rate@10": 0.4001,
+        "popularity_percentile@10": 0.9434,
+        "coverage": 0.379,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 2.0,
+        "reg": 10.0,
+        "precision@10": 0.069,
+        "recall@10": 0.1276,
+        "ndcg@10": 0.1117,
+        "hit_rate@10": 0.4306,
+        "popularity_percentile@10": 0.9684,
+        "coverage": 0.2214,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 2.0,
+        "reg": 30.0,
+        "precision@10": 0.0713,
+        "recall@10": 0.132,
+        "ndcg@10": 0.1144,
+        "hit_rate@10": 0.4312,
+        "popularity_percentile@10": 0.9725,
+        "coverage": 0.2004,
+        "users_evaluated": 9312
+      },
+      {
+        "factors": 64,
+        "alpha": 2.0,
+        "reg": 100.0,
+        "precision@10": 0.0593,
+        "recall@10": 0.1068,
+        "ndcg@10": 0.0959,
+        "hit_rate@10": 0.3557,
+        "popularity_percentile@10": 0.9908,
+        "coverage": 0.086,
+        "users_evaluated": 9312
+      }
+    ],
     "hybrid": [
       {
         "history_prior": 2.0,
@@ -699,5 +942,5 @@
     "n_items": 5000,
     "n_interactions": 1450162
   },
-  "runtime_seconds": 86.1
+  "runtime_seconds": 289.5
 }

@@ -10,6 +10,7 @@ Protocol: per-user chronological split (10% validation, 20% test per user), posi
 | popularity | 0.0790 | 0.0574 | 0.0621 | 0.3491 | 0.0318 | 0.9980 | 0.5662 | [0.0764, 0.0819] |
 | content | 0.0582 | 0.0448 | 0.0483 | 0.3158 | 0.6506 | 0.7280 | 0.4168 | [0.0561, 0.0604] |
 | item_knn | 0.1253 | 0.0943 | 0.0969 | 0.4811 | 0.2132 | 0.9838 | 0.6261 | [0.1218, 0.1288] |
+| als | 0.1455 | 0.1118 | 0.1146 | 0.5584 | 0.2172 | 0.9714 | 0.7228 | [0.1417, 0.1491] |
 | hybrid | 0.1266 | 0.0959 | 0.0976 | 0.4861 | 0.2272 | 0.9834 | 0.6171 | [0.1227, 0.1300] |
 
 ## Test: cold start (each user's 3 most recent likes)
@@ -20,6 +21,7 @@ Protocol: per-user chronological split (10% validation, 20% test per user), posi
 | popularity | 0.0792 | 0.0583 | 0.0624 | 0.3522 | 0.0292 | 0.9980 | 0.5654 | [0.0751, 0.0833] |
 | content | 0.0514 | 0.0383 | 0.0398 | 0.2777 | 0.8824 | 0.6853 | 0.4032 | [0.0484, 0.0545] |
 | item_knn | 0.1141 | 0.0932 | 0.0856 | 0.4715 | 0.6382 | 0.8821 | 0.6640 | [0.1092, 0.1186] |
+| als | 0.1171 | 0.0941 | 0.0876 | 0.4835 | 0.2344 | 0.9584 | 0.6971 | [0.1122, 0.1218] |
 | hybrid | 0.1151 | 0.0914 | 0.0870 | 0.4758 | 0.6672 | 0.8763 | 0.5883 | [0.1102, 0.1195] |
 
 ## Paired differences in NDCG (bootstrap 95% CI)
@@ -28,6 +30,10 @@ Protocol: per-user chronological split (10% validation, 20% test per user), posi
 |---|---|---|
 | item_knn - popularity (full) | +0.0464 | [+0.0431, +0.0494] |
 | item_knn - popularity (cold) | +0.0349 | [+0.0298, +0.0397] |
+| als - popularity (full) | +0.0665 | [+0.0624, +0.0700] |
+| als - popularity (cold) | +0.0379 | [+0.0325, +0.0433] |
+| als - item_knn (full) | +0.0201 | [+0.0173, +0.0228] |
+| als - item_knn (cold) | +0.0029 | [-0.0006, +0.0064] |
 | hybrid - popularity (full) | +0.0476 | [+0.0443, +0.0505] |
 | hybrid - popularity (cold) | +0.0359 | [+0.0308, +0.0407] |
 | hybrid - item_knn (full) | +0.0012 | [+0.0007, +0.0018] |
@@ -62,6 +68,11 @@ ILD = mean pairwise cosine distance between Tag Genome embeddings of the 10 reco
   "content": {
     "n_components": 128
   },
+  "als": {
+    "factors": 64,
+    "alpha": 2.0,
+    "reg": 30.0
+  },
   "hybrid": {
     "history_prior": 2.0,
     "popularity_weight": 0.0
@@ -70,4 +81,4 @@ ILD = mean pairwise cosine distance between Tag Genome embeddings of the 10 reco
 }
 ```
 
-Data: {'created_at': '2026-10-22T13:25:44+00:00', 'n_users': 10000, 'n_items': 5000, 'n_interactions': 1450162}. Runtime: 86.1s.
+Data: {'created_at': '2026-10-22T13:25:44+00:00', 'n_users': 10000, 'n_items': 5000, 'n_interactions': 1450162}. Runtime: 289.5s.

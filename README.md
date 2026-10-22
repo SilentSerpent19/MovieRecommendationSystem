@@ -6,7 +6,7 @@ A Django web app backed by a small, reproducible recommender-systems pipeline bu
 Users filter by genre, era, IMDb rating and mood. A hybrid model (item-kNN collaborative filtering plus
 Tag Genome content similarity) ranks the matches using what each user has liked or saved, and explains every pick.
 
-The project is sized for a laptop: each pipeline step finishes in under 1.5 minutes, with a peak of about 430 MB of RAM.
+The project is sized for a laptop: each pipeline step finishes in under 5 minutes, with a peak of about 500 MB of RAM.
 
 ## Results
 
@@ -19,7 +19,8 @@ and confidence intervals, is in [`reports/evaluation.md`](reports/evaluation.md)
 | popularity | 0.079 [0.076, 0.082] | 0.057 | 0.35 | 0.03 | 0.079 [0.075, 0.083] |
 | content (Tag Genome) | 0.058 [0.056, 0.060] | 0.045 | 0.32 | 0.65 | 0.051 [0.048, 0.055] |
 | item-kNN | 0.125 [0.122, 0.129] | 0.094 | 0.48 | 0.21 | 0.114 [0.109, 0.119] |
-| **hybrid (served)** | **0.127** [0.123, 0.130] | **0.096** | **0.49** | 0.23 | **0.115** [0.110, 0.120] |
+| **ALS (matrix factorisation)** | **0.146** [0.142, 0.149] | **0.113** | **0.56** | 0.22 | **0.117** [0.113, 0.122] |
+| hybrid (served: item-kNN + content) | 0.127 [0.123, 0.130] | 0.096 | 0.49 | 0.23 | 0.115 [0.110, 0.120] |
 
 "Cold start" means half of the users (4,912 evaluated) have their training history cut to their 3 most recent likes
 *before* the models are fit, which mirrors a new user of the app.
@@ -28,6 +29,10 @@ What the numbers say:
 
 - **Collaborative filtering clearly beats popularity.** Item-kNN adds +0.046 NDCG with full histories
   (paired bootstrap 95% CI [+0.043, +0.049]) and +0.035 with only 3 likes ([+0.030, +0.040]).
+- **ALS is the most accurate model.** Implicit-feedback matrix factorisation (64 factors, alpha 2, reg 30; every
+  tuned value is inside the grid) beats item-kNN by +0.020 NDCG (+16%, paired CI [+0.017, +0.023]). Its lists are
+  also more varied (ILD 0.72 vs 0.63). At cold start it ties with item-kNN (+0.003, CI [−0.001, +0.006]).
+  The served hybrid still uses item-kNN; swapping in ALS is the next step.
 - **The hybrid adds no meaningful accuracy over item-kNN.** The gain is +0.001 NDCG: statistically detectable with
   full histories, and not significant at cold start (CI [-0.001, +0.003]). It is served because it covers more of the
   catalog (0.67 vs 0.64 at cold start), recommends slightly less mainstream titles, and has a content-based answer
@@ -115,6 +120,10 @@ Typical response time is 3–7 ms per request once the model is loaded.
   remaining likes never shape the similarities. An independent review caught the earlier version, which leaked.
 - **Metrics:** precision, recall, NDCG and hit rate @10; catalog coverage; novelty (mean popularity percentile);
   bootstrap 95% CIs; and paired bootstrap differences between models.
+- **ALS:** implicit-feedback matrix factorisation (Hu, Koren & Volinsky 2008), with confidence 1 + alpha on
+  positives, solved exactly by alternating least squares in NumPy. Only item factors are stored. Users are folded
+  in from their history with one least-squares solve, so new and app users need no retraining. A fit takes about
+  9 s at 64 factors.
 - **Item-kNN:** cosine similarity with shrinkage, computed 500 items at a time. Only the top-k neighbours per item
   are kept as a sparse matrix, so the 5,000 × 5,000 dense similarity matrix is never built.
 - **Content model:** the Tag Genome is standardised and reduced with TruncatedSVD (128 dimensions). A user's profile
@@ -126,7 +135,7 @@ Typical response time is 3–7 ms per request once the model is loaded.
   | step | time | peak memory |
   |---|---|---|
   | `prepare_data` | 85 s (50 s of it Wikidata, cached after the first run) | 430 MB |
-  | `evaluate_recommenders` (incl. diversity sweep) | 88 s | 410 MB |
+  | `evaluate_recommenders` (all models, tuning, diversity sweep) | ~5 min | 500 MB |
   | `train_recommender` | ~1 s | small |
 
 ## Quickstart
@@ -159,7 +168,7 @@ ruff check system/
 system/ml/            framework-free data and ML code (also used by the tests)
   sources.py          download + checksum       movielens.py   streaming zip readers
   prepare.py          builds the processed set  moods.py       Tag Genome moods
-  data.py             splits, sparse matrices   models.py      popularity, content, item-kNN, hybrid, MMR
+  data.py             splits, sparse matrices   models.py      popularity, content, item-kNN, ALS, hybrid, MMR
   evaluation.py       metrics, bootstrap        experiment.py  tuning + test protocol
   artifacts.py        versioned model save/load
 system/recommender.py serving pipeline (filters → candidates → score → diversify → explain → log)
