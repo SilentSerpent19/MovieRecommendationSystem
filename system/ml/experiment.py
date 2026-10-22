@@ -14,7 +14,7 @@ import scipy.sparse as sp
 
 from .data import POSITIVE_THRESHOLD, Dataset, interaction_matrix, temporal_split
 from .evaluation import bootstrap_ci, evaluate, truncate_history
-from .models import ContentModel, HybridModel, ItemKNNModel, PopularityModel, RandomModel
+from .models import ALSModel, ContentModel, HybridModel, ItemKNNModel, PopularityModel, RandomModel
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +31,9 @@ class ExperimentConfig:
     knn_k: tuple = (25, 50, 100, 200)
     knn_shrink: tuple = (0.0, 10.0, 50.0)
     content_components: tuple = (32, 64, 128)
+    als_factors: tuple = (32, 64, 128)
+    als_alpha: tuple = (1.0, 2.0, 5.0, 20.0)
+    als_reg: tuple = (1.0, 10.0, 30.0, 100.0)  # second stage, at the best factors/alpha
     history_prior: tuple = (2.0, 10.0, 50.0)
     popularity_weight: tuple = (0.0, 0.1, 0.3)
     diversity: tuple = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7)  # MMR trade-off; 0 = plain ranking
@@ -103,6 +106,20 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     best_content = max(content_results, key=lambda n: content_results[n][f'ndcg@{cfg.k}'])
     tuning['content'] = [{'n_components': n, **r} for n, r in content_results.items()]
 
+    log.info('Tuning ALS (stage 1: factors x alpha at reg=1; stage 2: reg)')
+    als_results = {}
+    for f in cfg.als_factors:
+        for a in cfg.als_alpha:
+            m = ALSModel(factors=f, alpha=a, reg=1.0, seed=cfg.seed).fit(val.train, ds.genome)
+            als_results[(f, a, 1.0)] = _eval(m, val, cfg.k)
+    f_best, a_best, _ = max(als_results, key=lambda p: als_results[p][f'ndcg@{cfg.k}'])
+    for reg in cfg.als_reg:
+        if (f_best, a_best, reg) not in als_results:
+            m = ALSModel(factors=f_best, alpha=a_best, reg=reg, seed=cfg.seed).fit(val.train, ds.genome)
+            als_results[(f_best, a_best, reg)] = _eval(m, val, cfg.k)
+    best_als = max(als_results, key=lambda p: als_results[p][f'ndcg@{cfg.k}'])
+    tuning['als'] = [{'factors': p[0], 'alpha': p[1], 'reg': p[2], **r} for p, r in als_results.items()]
+
     log.info('Tuning hybrid blend (objective: mean of full-history and cold-start validation NDCG)')
     cold_users = rng.choice(ds.n_users, size=int(cfg.cold_start_fraction * ds.n_users), replace=False)
     val_cold = val.cold_start(np.intersect1d(cold_users, tune_users), cfg.cold_start_history)
@@ -139,6 +156,7 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             PopularityModel(),
             ContentModel(best_content, seed=cfg.seed),
             ItemKNNModel(*best_knn),
+            ALSModel(factors=best_als[0], alpha=best_als[1], reg=best_als[2], seed=cfg.seed),
             HybridModel(ItemKNNModel(*best_knn), ContentModel(best_content, seed=cfg.seed), PopularityModel(),
                         history_prior=best_hybrid[0], popularity_weight=best_hybrid[1]),
         ]
@@ -154,7 +172,8 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             out[m.name] = r
             log.info('%s (%s): ndcg %s', m.name, name, r[f'ndcg@{cfg.k}'])
     comparisons = {}
-    for a, b in (('item_knn', 'popularity'), ('hybrid', 'popularity'), ('hybrid', 'item_knn'),
+    for a, b in (('item_knn', 'popularity'), ('als', 'popularity'), ('als', 'item_knn'),
+                 ('hybrid', 'popularity'), ('hybrid', 'item_knn'),
                  ('hybrid', 'content')):
         for setting in ('full', 'cold'):
             diff = per_user[(a, setting)] - per_user[(b, setting)]
@@ -185,6 +204,7 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
         'selected_params': {
             'item_knn': {'k': best_knn[0], 'shrink': best_knn[1]},
             'content': {'n_components': best_content},
+            'als': {'factors': best_als[0], 'alpha': best_als[1], 'reg': best_als[2]},
             'hybrid': {'history_prior': best_hybrid[0], 'popularity_weight': best_hybrid[1]},
             'diversity': best_diversity,
         },

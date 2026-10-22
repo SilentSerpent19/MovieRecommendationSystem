@@ -99,6 +99,59 @@ class ItemKNNModel:
         return np.asarray((X_users @ self.similarity).todense(), dtype=np.float32)
 
 
+class ALSModel:
+    """Implicit-feedback matrix factorisation (Hu, Koren & Volinsky 2008) fitted by alternating least squares.
+
+    Each observed positive gets confidence 1 + alpha and every unobserved pair confidence 1 (preference 0).
+    Only item factors are kept: users are folded in from their history at scoring time (one exact
+    least-squares solve each), so cold-start and app users need no retraining. Memory is
+    O((n_users + n_items) x factors) plus one chunk of factors x factors systems.
+    """
+
+    name = 'als'
+
+    def __init__(self, factors: int = 64, reg: float = 1.0, alpha: float = 20.0, iterations: int = 10,
+                 seed: int = 0, chunk: int = 2000):
+        self.factors, self.reg, self.alpha = factors, reg, alpha
+        self.iterations, self.seed, self.chunk = iterations, seed, chunk
+
+    def fit(self, X: sp.csr_matrix, genome: np.ndarray):
+        X = sp.csr_matrix(X, dtype=np.float32)
+        XT = X.T.tocsr()
+        rng = np.random.default_rng(self.seed)
+        items = rng.normal(0, 0.01, (X.shape[1], self.factors)).astype(np.float32)
+        for _ in range(self.iterations):
+            users = self._solve(X, items)
+            items = self._solve(XT, users)
+        self.item_factors = items
+        return self
+
+    def _solve(self, R: sp.csr_matrix, F: np.ndarray) -> np.ndarray:
+        """Row-wise argmin_x sum_j c_rj (p_rj - x.F_j)^2 + reg |x|^2 for a binary CSR matrix R.
+
+        Uses the identity sum_j c_rj F_j F_j^T = F^T F + alpha * sum_{j in row} F_j F_j^T, so only each row's
+        non-zeros are touched. Rows with no positives get the zero vector (their exact solution).
+        """
+        F64 = F.astype(np.float64)
+        base = F64.T @ F64 + self.reg * np.eye(self.factors)
+        out = np.zeros((R.shape[0], self.factors), np.float32)
+        rows = np.flatnonzero(np.diff(R.indptr))
+        for chunk in np.array_split(rows, len(rows) // self.chunk + 1):
+            A = np.empty((len(chunk), self.factors, self.factors))
+            b = np.empty((len(chunk), self.factors))
+            for i, r in enumerate(chunk):
+                Fj = F64[R.indices[R.indptr[r]:R.indptr[r + 1]]]
+                A[i] = base + self.alpha * (Fj.T @ Fj)
+                b[i] = (1 + self.alpha) * Fj.sum(axis=0)
+            if len(chunk):
+                out[chunk] = np.linalg.solve(A, b[..., None])[..., 0]
+        return out
+
+    def score(self, X_users: sp.csr_matrix) -> np.ndarray:
+        users = self._solve(sp.csr_matrix(X_users, dtype=np.float32), self.item_factors)
+        return users @ self.item_factors.T
+
+
 def _minmax_rows(s: np.ndarray) -> np.ndarray:
     lo = s.min(axis=1, keepdims=True)
     span = s.max(axis=1, keepdims=True) - lo
