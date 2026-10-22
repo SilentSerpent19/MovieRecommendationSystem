@@ -23,16 +23,6 @@ This document explains all the environment variables used in the Django movie re
 - `CORS_ALLOW_ALL_ORIGINS` - Allow all origins (set to `False` in production)
 - `CORS_ALLOWED_ORIGINS` - List of allowed origins for CORS
 
-### Payment Settings
-- `PAYPAL_RECEIVER_EMAIL` - Your PayPal business email
-- `PAYPAL_TEST` - Use PayPal sandbox (`True`) or production (`False`)
-- `STRIPE_SECRET_KEY` - Your Stripe secret key
-- `STRIPE_PUBLISHABLE_KEY` - Your Stripe publishable key
-- `STRIPE_WEBHOOK_SECRET` - Your Stripe webhook secret
-
-### API Keys
-- `OMDB_API_KEY` - OMDb API key for movie data
-
 ### Authentication Settings
 - `LOGIN_URL` - URL for login page
 - `LOGIN_REDIRECT_URL` - URL to redirect after login
@@ -50,8 +40,8 @@ This document explains all the environment variables used in the Django movie re
 - `EMAIL_HOST_PASSWORD` - Email password
 - `DEFAULT_FROM_EMAIL` - Default sender email
 
-### Other Settings
-- `GDPR_ENABLED` - Enable GDPR compliance features
+### Data & ML
+- `MOOD_THRESHOLD` - Minimum Tag Genome score (0-1) for a movie to carry a mood label (default `0.5`)
 
 ## Development vs Production
 
@@ -59,7 +49,6 @@ This document explains all the environment variables used in the Django movie re
 ```bash
 DJANGO_DEBUG=True
 CORS_ALLOW_ALL_ORIGINS=True
-PAYPAL_TEST=True
 SECURE_SSL_REDIRECT=False
 SESSION_COOKIE_SECURE=False
 CSRF_COOKIE_SECURE=False
@@ -70,7 +59,6 @@ CSRF_COOKIE_SECURE=False
 DJANGO_DEBUG=False
 CORS_ALLOW_ALL_ORIGINS=False
 CORS_ALLOWED_ORIGINS=https://yourdomain.com
-PAYPAL_TEST=False
 SECURE_SSL_REDIRECT=True
 SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True

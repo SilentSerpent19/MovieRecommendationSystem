@@ -45,8 +45,6 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'rest_framework',
     'corsheaders',
-    'paypal.standard.ipn',
-    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -146,24 +144,22 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Data and model artifacts (git-ignored). See system/ml/ and the prepare_data / load_catalog commands.
+DATA_DIR = BASE_DIR / 'data'
+RAW_DATA_DIR = DATA_DIR / 'raw'
+PROCESSED_DATA_DIR = DATA_DIR / 'processed'
+MODEL_DIR = DATA_DIR / 'models'
+# Minimum Tag Genome mood score (0-1) for a movie to carry a mood label.
+MOOD_THRESHOLD = env.float('MOOD_THRESHOLD', default=0.5)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# GDPR/Legal
-GDPR_ENABLED = env.bool('GDPR_ENABLED', default=True)
-
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)  # For development only; restrict in production
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
-
-# PayPal settings
-PAYPAL_RECEIVER_EMAIL = env('PAYPAL_RECEIVER_EMAIL', default='your-paypal-business-email@example.com')
-PAYPAL_TEST = env.bool('PAYPAL_TEST', default=True)  # Set to False for production
-
-# OMDb API settings
-OMDB_API_KEY = env('OMDB_API_KEY', default='')
 
 # Authentication settings
 LOGIN_URL = env('LOGIN_URL', default='/login/')

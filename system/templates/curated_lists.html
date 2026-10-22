@@ -22,24 +22,17 @@
       <div class="curated-movies-scroll">
         <div class="curated-movies">
           {% for movie in clist.movies.all %}
-            <div class="curated-movie-card glass" 
-                 data-title="{{ movie.title }}"
-                 data-year="{{ movie.year }}"
-                 data-genre="{{ movie.genre }}"
-                 data-director="{{ movie.director }}"
-                 data-actors="{{ movie.actors }}"
-                 data-rating="{{ movie.imdb_rating }}"
-                 data-runtime="{{ movie.runtime }}"
-                 data-streaming="{{ movie.streaming_platform }}"
-                 data-mood="{{ movie.mood.name|default:'' }}"
-                 data-id="{{ movie.id }}"
-                 onclick="showMovieModal(this)"
-                 onkeydown="if(event.key==='Enter'){showMovieModal(this);}"
-                 tabindex="0">
-                <div class="movie-poster">
-                  <div class="movie-poster-placeholder">🎬</div>
-                </div>
-              </div>
+            <div class="curated-movie-card glass" style="padding:1rem;">
+              <div class="movie-poster"><div class="movie-poster-placeholder">🎬</div></div>
+              <h4 style="font-size:1rem;margin:.6rem 0 .2rem;">{{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %}</h4>
+              <div style="font-size:.8rem;opacity:.85;">{{ movie.genres.all|join:", " }}</div>
+              {% if movie.moods.all %}<div style="font-size:.8rem;color:#a5b4fc;">{{ movie.moods.all|join:", " }}</div>{% endif %}
+              {% if movie.imdb_rating %}<div style="font-size:.85rem;">IMDb {{ movie.imdb_rating }}</div>{% endif %}
+              <form method="post" action="{% url 'add_to_watchlist' movie.pk %}" style="margin-top:.5rem;">
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit" class="cinema-btn cinema-btn-primary" style="padding:.3rem .8rem;font-size:.85rem;">+ Watchlist</button>
+              </form>
+            </div>
           {% empty %}
             <div class="no-recs curated-empty">
               <div class="empty-icon">🎬</div>
@@ -59,28 +52,4 @@
   {% endfor %}
 </div>
 <a href="{% url 'recommend' %}" class="cinema-btn cinema-btn-secondary mt-3">Back to Recommendations</a>
-<script>
-function showMovieModal(card) {
-  const title = card.getAttribute('data-title');
-  const year = card.getAttribute('data-year');
-  const genre = card.getAttribute('data-genre');
-  const director = card.getAttribute('data-director');
-  const actors = card.getAttribute('data-actors');
-  const rating = card.getAttribute('data-rating');
-  const id = card.getAttribute('data-id');
-  let html = `<div style='text-align:center;'>`;
-  html += `<div class='movie-poster-placeholder' style='font-size:3rem;margin-bottom:1.2rem;'>🎬</div>`;
-  html += `<h2 style='color:#ffd700;font-size:1.5rem;font-weight:700;'>${title} <span style='color:#ffb347;font-size:1.1rem;'>(${year})</span></h2>`;
-  html += `<div style='margin:0.7rem 0 0.5rem 0;'><span style='color:#ffd700;font-weight:600;'>⭐ ${rating}</span></div>`;
-  html += `<div style='color:#f3f3f7;font-size:1.05rem;margin-bottom:0.5rem;'>${genre}</div>`;
-  html += `<div style='color:#b3e5fc;font-size:1.01rem;margin-bottom:0.5rem;'>Director: ${director}</div>`;
-  html += `<div style='color:#f3f3f7;font-size:0.98rem;margin-bottom:1rem;'>Cast: ${actors}</div>`;
-  html += `<div style='display:flex;gap:0.7rem;justify-content:center;'>`;
-  html += `<a href='/add_to_watchlist/${id}/' class='cinema-btn cinema-btn-primary' style='min-width:120px;'>Add to Watchlist</a>`;
-  html += `<a href='/remove_from_watchlist/${id}/' class='cinema-btn cinema-btn-danger' style='min-width:120px;'>Remove</a>`;
-  html += `</div>`;
-  html += `</div>`;
-  openMovieModal(html);
-}
-</script>
 {% endblock %} 
