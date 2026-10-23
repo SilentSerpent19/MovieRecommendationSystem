@@ -2,11 +2,30 @@
 
 [![CI](https://github.com/SilentSerpent19/MovieRecommendationSystem/actions/workflows/ci.yml/badge.svg)](https://github.com/SilentSerpent19/MovieRecommendationSystem/actions/workflows/ci.yml)
 
-A Django web app backed by a small, reproducible recommender-systems pipeline built on **MovieLens 25M**.
-Users filter by genre, era, IMDb rating and mood. A hybrid model (ALS matrix factorisation plus
-Tag Genome content similarity) ranks the matches using what each user has liked or saved, and explains every pick.
+An end-to-end movie recommender: from 25M raw ratings to a tested model, served in a web app.
 
-The project is sized for a laptop: each pipeline step finishes in under 5 minutes, with a peak of about 500 MB of RAM.
+| | |
+|---|---|
+| **Problem** | Recommend movies a user will like, including users with only a few likes. |
+| **Data** | MovieLens 25M sampled down to 10,000 users × 5,000 movies (1.45M ratings), plus IMDb ratings and Wikidata metadata. |
+| **Result** | The served hybrid model scores **NDCG@10 = 0.148** on each user's held-out *future* ratings. That is **+88%** over a popularity baseline and **+19%** over item-kNN, statistically significant, and it holds on 4 independent user samples and under a global time split. |
+| **Product** | A Django app with genre, era, rating and mood filters, "Because you liked X" explanations, and logging of what was shown and clicked. |
+| **Runs on** | An 8 GB laptop: every step finishes in under 5 minutes with a peak of about 550 MB of RAM. |
+
+**Skills shown:**
+- **Data:** data pipeline design under memory limits, with streaming, sampling and sparse matrices.
+- **Evaluation:** leakage-free evaluation (chronological split, tuning on validation, a test set scored once) and
+  statistical testing (bootstrap confidence intervals, paired comparisons).
+- **Models:** item-kNN, ALS matrix factorisation, a hybrid, and MMR diversity re-ranking.
+- **Tools:** Python, pandas, NumPy/SciPy, scikit-learn, matplotlib, Django/DRF, pytest, and GitHub Actions CI.
+
+**Start here:** the [notebook](notebooks/01_eda_and_results.ipynb) walks through the data and the results, and
+[`reports/`](reports/evaluation.md) has the full evaluation tables.
+
+![The app: mood and era filters, with each pick explained by a movie the user liked](docs/screenshots/recommendations.png)
+
+Users filter by genre, era, IMDb rating and mood. A hybrid model (ALS matrix factorisation plus Tag Genome content
+similarity) ranks the matches using what each user has liked or saved, and explains every pick.
 
 ## Results
 
