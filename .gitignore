@@ -274,6 +274,7 @@ data/*.json
 data/raw/
 data/processed/
 data/models/
+data/robustness/
 !data/README.md
 
 # Node.js (if using any frontend tools)

@@ -20,7 +20,7 @@ with charts.
 | random | 0.004 | 0.003 | 0.03 | 1.00 | 0.003 |
 | popularity | 0.079 [0.076, 0.082] | 0.057 | 0.35 | 0.03 | 0.079 [0.075, 0.083] |
 | content (Tag Genome) | 0.058 [0.056, 0.060] | 0.045 | 0.32 | 0.65 | 0.051 [0.048, 0.055] |
-| item-kNN | 0.125 [0.122, 0.129] | 0.094 | 0.48 | 0.21 | 0.114 [0.109, 0.119] |
+| item-kNN | 0.125 [0.121, 0.128] | 0.094 | 0.48 | 0.23 | 0.111 [0.106, 0.115] |
 | ALS (matrix factorisation) | 0.146 [0.142, 0.149] | 0.113 | 0.56 | 0.22 | 0.117 [0.112, 0.122] |
 | **hybrid (served: ALS + content)** | **0.148** [0.145, 0.152] | **0.115** | **0.56** | 0.22 | **0.119** [0.114, 0.123] |
 
@@ -32,12 +32,12 @@ with charts.
 What the numbers say:
 
 - **Collaborative filtering clearly beats popularity.** Item-kNN adds +0.046 NDCG with full histories
-  (paired bootstrap 95% CI [+0.043, +0.049]) and +0.035 with only 3 likes ([+0.030, +0.040]).
+  (paired bootstrap 95% CI [+0.043, +0.049]) and +0.032 with only 3 likes ([+0.027, +0.036]).
 - **ALS is the strongest single model.** Implicit-feedback matrix factorisation (64 factors, alpha 2, reg 30; every
-  tuned value is inside the grid) beats item-kNN by +0.020 NDCG (+16%, paired CI [+0.017, +0.023]). Its lists are
-  also more varied (ILD 0.72 vs 0.63). At cold start it ties with item-kNN (+0.003, CI [−0.001, +0.006]).
+  tuned value is inside the grid) beats item-kNN by +0.021 NDCG (+16%, paired CI [+0.018, +0.023]). Its lists are
+  also more varied (ILD 0.72 vs 0.62). At cold start the gap is smaller but still significant (+0.006, CI [+0.003, +0.010]).
 - **The served hybrid (ALS + content) is the best model overall.** It adds a small but significant +0.003 NDCG over
-  ALS alone (CI [+0.002, +0.004]) and +0.023 over the earlier item-kNN hybrid (+18%). At cold start the content
+  ALS alone (CI [+0.002, +0.004]) and +0.023 over item-kNN (+19%). At cold start the content
   part lifts catalog coverage from 0.23 (ALS alone) to 0.39 while matching ALS on accuracy.
 - **Content similarity alone is less accurate than popularity but far more diverse.** It recommends 65–88% of the
   catalog, against 3% for popularity. This is the usual accuracy versus coverage trade-off.
@@ -62,6 +62,34 @@ the 10 movies. The table shows test results.
 
 Light re-ranking adds diversity at no cost to accuracy. Beyond about 0.4 the accuracy drops quickly. MMR barely
 changes catalog coverage, because it only reorders each user's own top 200; broader coverage needs a different model.
+
+### Robustness
+
+`python manage.py robustness_check` (about 4 minutes and 550 MB peak, plus 86 MB under `data/robustness/`) reruns
+the test evaluation with the selected hyperparameters under two changes. Full tables are in
+[`reports/robustness.md`](reports/robustness.md).
+
+![NDCG@10 across four user samples and under a global time split](reports/figures/robustness.png)
+
+**1. Three more independent user samples** (seeds 1–3; each shares only ~6% of its users with the main sample):
+
+- The ranking hybrid > ALS > item-kNN > popularity holds in all four samples. Full-history NDCG@10, mean ± sd:
+  hybrid 0.147 ± 0.003, ALS 0.144 ± 0.003, item-kNN 0.124 ± 0.003, popularity 0.079 ± 0.001.
+- ALS vs item-kNN and hybrid vs item-kNN are significant in every sample, with full histories and at cold start.
+- Hybrid vs ALS is significant with full histories in every sample (+0.002 to +0.003). At cold start it is
+  significant in only 1 of 4. The hybrid's cold-start edge over ALS is catalog coverage, not accuracy.
+
+**2. One global cut-off date** (2016-06-06; the newest 20% of all interactions are test). No training interaction is
+newer than any test interaction:
+
+- ALS still beats item-kNN clearly: 0.163 vs 0.128, paired difference +0.034 [+0.020, +0.048].
+- The hybrid ties ALS (−0.003 [−0.007, +0.002]).
+- Only 399 users have likes on both sides of the cut-off, so the intervals are wide. Most users active after 2016
+  are new to the dataset.
+- 18.5% of the test likes go to movies nobody had liked before the cut-off. Collaborative models cannot recommend
+  these movies. The content model can, which is why it beats popularity here (0.125 vs 0.097) but not in the
+  per-user split. The served hybrid gives these users almost all of its weight to ALS (`history_prior` = 2), so it
+  doesn't use that advantage. A blend that also weights by item age is an obvious next experiment.
 
 ## Data
 
@@ -191,12 +219,11 @@ notebooks/            EDA and results walkthrough (charts saved to reports/figur
 ## Limitations
 
 - **Some inputs look ahead in time.** The Tag Genome and the catalog selection (most-rated movies) were computed from
-  data that includes ratings after the test cut-off. The split is per user, not global, so co-occurrences from other
-  users' later activity are learned. Absolute scores are therefore somewhat optimistic; comparisons between models
-  are fairer.
-- **The results come from one sample.** There is one seed and one 10,000-user sample over the 5,000 most-rated
-  movies, so the numbers say nothing about long-tail items. The confidence intervals cover user sampling only, not
-  tuning or split variance.
+  data that includes ratings after the test cut-off. The main split is per user, so co-occurrences from other
+  users' later activity are learned. Absolute scores are therefore somewhat optimistic. The global time split in
+  [Robustness](#robustness) removes the second issue and leaves the model ranking at the top unchanged.
+- **Only the 5,000 most-rated movies are covered**, so the numbers say nothing about long-tail items. The
+  robustness checks vary the user sample and the split, but hyperparameters were tuned once, on the main sample.
 - **Filter relaxation is not evaluated offline.** It only changes which candidates are eligible.
 - **The model learns only from MovieLens users.** App users get personalised results through item similarity from
   their likes, but their behaviour is logged, not used to retrain the model.
