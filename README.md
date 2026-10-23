@@ -11,7 +11,9 @@ The project is sized for a laptop: each pipeline step finishes in under 5 minute
 ## Results
 
 Offline evaluation on each user's held-out *future* interactions (9,817 users). The full report, with tuning grids
-and confidence intervals, is in [`reports/evaluation.md`](reports/evaluation.md).
+and confidence intervals, is in [`reports/evaluation.md`](reports/evaluation.md). The notebook
+[`notebooks/01_eda_and_results.ipynb`](notebooks/01_eda_and_results.ipynb) walks through the data and these results
+with charts.
 
 | model | NDCG@10 (95% CI) | Recall@10 | Hit rate@10 | Catalog coverage | Cold-start NDCG@10 (95% CI) |
 |---|---|---|---|---|---|
@@ -24,6 +26,8 @@ and confidence intervals, is in [`reports/evaluation.md`](reports/evaluation.md)
 
 "Cold start" means half of the users (4,912 evaluated) have their training history cut to their 3 most recent likes
 *before* the models are fit, which mirrors a new user of the app.
+
+![Test NDCG@10 by model with 95% bootstrap confidence intervals](reports/figures/ndcg_by_model.png)
 
 What the numbers say:
 
@@ -54,6 +58,8 @@ the 10 movies. The table shows test results.
 
 0.4 met the 5% budget on validation; on test the cost is 5.1%.
 
+![NDCG@10 against intra-list diversity for each MMR setting](reports/figures/diversity_tradeoff.png)
+
 Light re-ranking adds diversity at no cost to accuracy. Beyond about 0.4 the accuracy drops quickly. MMR barely
 changes catalog coverage, because it only reorders each user's own top 200; broader coverage needs a different model.
 
@@ -78,6 +84,8 @@ changes catalog coverage, because it only reorders each user's own top 200; broa
   Dark = `dark`, `bleak`, `disturbing`, `depressing`; see `system/ml/moods.py`. They are multi-label, scored and
   deterministic. At a threshold of 0.5, 72% of movies have at least one mood. For example, *The Shining* is
   Scary/Suspenseful/Dark and *Inception* is Thought-Provoking/Action-Packed/Atmospheric.
+
+![Ratings per movie and cumulative share of all ratings for the 5,000-movie catalog](reports/figures/long_tail.png)
 
 Every run of `prepare_data` writes `data/processed/manifest.json`. It records the config, source checksums and a
 data-quality report: what was dropped and why, missing values, rating distribution, and mood score quantiles.
@@ -152,6 +160,9 @@ python manage.py createsuperuser         # staff users can open /analytics/
 python manage.py runserver
 ```
 
+To rerun the notebook, install `requirements-notebooks.txt` and open `notebooks/01_eda_and_results.ipynb`.
+It reads only `data/processed/` and `reports/`, and runs in about 10 seconds.
+
 You can change the dataset size with `prepare_data --movies 3000 --users 5000`. Use `--skip-wikidata` to work offline.
 
 Tests and lint:
@@ -173,7 +184,8 @@ system/ml/            framework-free data and ML code (also used by the tests)
   artifacts.py        versioned model save/load
 system/recommender.py serving pipeline (filters → candidates → score → diversify → explain → log)
 system/management/commands/  prepare_data, load_catalog, evaluate_recommenders, train_recommender, send_weekly_recs
-reports/              committed evaluation results
+reports/              committed evaluation results and figures
+notebooks/            EDA and results walkthrough (charts saved to reports/figures/)
 ```
 
 ## Limitations
