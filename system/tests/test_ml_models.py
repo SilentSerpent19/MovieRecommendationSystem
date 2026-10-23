@@ -208,3 +208,54 @@ def test_artifacts_without_cf_key_load_as_item_knn(tmp_path, X, genome):
     meta_path.write_text(json.dumps(meta))
     loaded, _, _ = artifacts.load(tmp_path, 'old')
     assert isinstance(loaded.cf, ItemKNNModel)
+
+
+SMALL_PARAMS = {'item_knn': {'k': 5, 'shrink': 0.0}, 'content': {'n_components': 4},
+                'als': {'factors': 4, 'alpha': 2.0, 'reg': 30.0}, 'hybrid': {'history_prior': 2.0,
+                                                                            'popularity_weight': 0.1}}
+
+
+def test_final_models_pass_als_params_by_name():
+    from system.ml.experiment import final_models
+    models = {m.name: m for m in final_models(SMALL_PARAMS, seed=0)}
+    for als in (models['als'], models['hybrid'].cf):
+        assert (als.factors, als.alpha, als.reg) == (4, 2.0, 30.0)
+
+
+def test_global_cutoff_leaves_test_fraction_after_it():
+    from system.ml.robustness import global_cutoff
+    ts = np.arange(100, 0, -1)
+    cut = global_cutoff(ts, 0.2)
+    assert (ts >= cut).sum() == 20
+
+
+def test_global_time_split_evaluates_only_users_with_history():
+    from system.ml.data import Dataset
+    from system.ml.experiment import ExperimentConfig
+    from system.ml.robustness import global_time_split
+    rng = np.random.default_rng(0)
+    n = 3000
+    users = rng.integers(0, 60, n).astype(np.int32)
+    users[:20] = 59  # user 59 appears only after the cut-off: it must not be evaluated
+    ts = rng.integers(0, 1000, n)
+    ts[:20] = 2000
+    ts[20:][users[20:] == 59] = 2000
+    ds = Dataset(item_ids=np.arange(30), genome=rng.random((30, 8)), users=users,
+                 items=rng.integers(0, 30, n).astype(np.int32), ratings=np.full(n, 4.5, np.float32),
+                 timestamps=ts, n_users=60, manifest={})
+    report = global_time_split(ds, SMALL_PARAMS, ExperimentConfig())
+    assert report['users']['new_after_cutoff'] >= 1
+    evaluated = report['users']['evaluated']
+    assert 0 < evaluated < report['users']['with_test_likes']
+    assert report['test_results']['hybrid']['users_evaluated'] == evaluated
+    assert set(report['paired_comparisons']) >= {'hybrid - als (global)', 'als - item_knn (global)'}
+
+
+def test_make_fold_users_restricts_evaluation():
+    from system.ml.data import Dataset
+    from system.ml.experiment import make_fold
+    ds = Dataset(item_ids=np.arange(3), genome=np.eye(3), users=np.array([0, 0, 1, 1], np.int32),
+                 items=np.array([0, 1, 0, 2], np.int32), ratings=np.full(4, 5.0, np.float32),
+                 timestamps=np.array([1, 2, 1, 2]), n_users=2, manifest={})
+    fold = make_fold(ds, ds.timestamps == 1, ds.timestamps == 2, users=np.array([1]))
+    assert np.flatnonzero(np.diff(fold.relevant.indptr)).tolist() == [1]

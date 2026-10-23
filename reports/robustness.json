@@ -1,0 +1,1278 @@
+{
+  "selected_params": {
+    "item_knn": {
+      "k": 100,
+      "shrink": 0.0
+    },
+    "content": {
+      "n_components": 128
+    },
+    "als": {
+      "factors": 64,
+      "alpha": 2.0,
+      "reg": 30.0
+    },
+    "hybrid": {
+      "history_prior": 2.0,
+      "popularity_weight": 0.1
+    },
+    "diversity": 0.4
+  },
+  "resampled_users": {
+    "samples": {
+      "seed 42 (main)": {
+        "test_results": {
+          "random": {
+            "precision@10": 0.0035,
+            "recall@10": 0.0025,
+            "ndcg@10": 0.0036,
+            "hit_rate@10": 0.0334,
+            "popularity_percentile@10": 0.4932,
+            "ild@10": 0.996,
+            "coverage": 1.0,
+            "users_evaluated": 9817,
+            "ndcg@10_ci95": [
+              0.0031,
+              0.004
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0621,
+            "recall@10": 0.0574,
+            "ndcg@10": 0.079,
+            "hit_rate@10": 0.3491,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.5662,
+            "coverage": 0.0318,
+            "users_evaluated": 9817,
+            "ndcg@10_ci95": [
+              0.0764,
+              0.0819
+            ]
+          },
+          "content": {
+            "precision@10": 0.0483,
+            "recall@10": 0.0448,
+            "ndcg@10": 0.0582,
+            "hit_rate@10": 0.3158,
+            "popularity_percentile@10": 0.728,
+            "ild@10": 0.4168,
+            "coverage": 0.6506,
+            "users_evaluated": 9817,
+            "ndcg@10_ci95": [
+              0.0561,
+              0.0604
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0968,
+            "recall@10": 0.0944,
+            "ndcg@10": 0.1249,
+            "hit_rate@10": 0.4837,
+            "popularity_percentile@10": 0.9833,
+            "ild@10": 0.6212,
+            "coverage": 0.2256,
+            "users_evaluated": 9817,
+            "ndcg@10_ci95": [
+              0.1211,
+              0.1284
+            ]
+          },
+          "als": {
+            "precision@10": 0.1146,
+            "recall@10": 0.1118,
+            "ndcg@10": 0.1455,
+            "hit_rate@10": 0.5584,
+            "popularity_percentile@10": 0.9714,
+            "ild@10": 0.7228,
+            "coverage": 0.2172,
+            "users_evaluated": 9817,
+            "ndcg@10_ci95": [
+              0.1417,
+              0.1491
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.1167,
+            "recall@10": 0.1143,
+            "ndcg@10": 0.1483,
+            "hit_rate@10": 0.5643,
+            "popularity_percentile@10": 0.9753,
+            "ild@10": 0.6987,
+            "coverage": 0.2184,
+            "users_evaluated": 9817,
+            "ndcg@10_ci95": [
+              0.1446,
+              0.152
+            ]
+          }
+        },
+        "test_results_cold_start": {
+          "random": {
+            "precision@10": 0.0032,
+            "recall@10": 0.0019,
+            "ndcg@10": 0.0034,
+            "hit_rate@10": 0.0301,
+            "popularity_percentile@10": 0.4928,
+            "ild@10": 0.9959,
+            "coverage": 1.0,
+            "users_evaluated": 4912,
+            "ndcg@10_ci95": [
+              0.0028,
+              0.004
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0624,
+            "recall@10": 0.0583,
+            "ndcg@10": 0.0792,
+            "hit_rate@10": 0.3522,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.5654,
+            "coverage": 0.0292,
+            "users_evaluated": 4912,
+            "ndcg@10_ci95": [
+              0.0751,
+              0.0833
+            ]
+          },
+          "content": {
+            "precision@10": 0.0398,
+            "recall@10": 0.0383,
+            "ndcg@10": 0.0514,
+            "hit_rate@10": 0.2777,
+            "popularity_percentile@10": 0.6853,
+            "ild@10": 0.4032,
+            "coverage": 0.8824,
+            "users_evaluated": 4912,
+            "ndcg@10_ci95": [
+              0.0484,
+              0.0545
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.083,
+            "recall@10": 0.0901,
+            "ndcg@10": 0.1107,
+            "hit_rate@10": 0.4617,
+            "popularity_percentile@10": 0.8736,
+            "ild@10": 0.665,
+            "coverage": 0.6492,
+            "users_evaluated": 4912,
+            "ndcg@10_ci95": [
+              0.1057,
+              0.1152
+            ]
+          },
+          "als": {
+            "precision@10": 0.0876,
+            "recall@10": 0.0941,
+            "ndcg@10": 0.1171,
+            "hit_rate@10": 0.4835,
+            "popularity_percentile@10": 0.9584,
+            "ild@10": 0.6971,
+            "coverage": 0.2344,
+            "users_evaluated": 4912,
+            "ndcg@10_ci95": [
+              0.1122,
+              0.1218
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.0896,
+            "recall@10": 0.0928,
+            "ndcg@10": 0.1187,
+            "hit_rate@10": 0.4927,
+            "popularity_percentile@10": 0.9421,
+            "ild@10": 0.5777,
+            "coverage": 0.3866,
+            "users_evaluated": 4912,
+            "ndcg@10_ci95": [
+              0.1138,
+              0.1231
+            ]
+          }
+        },
+        "paired_comparisons": {
+          "item_knn - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0459,
+            "ci95": [
+              0.0427,
+              0.0489
+            ]
+          },
+          "item_knn - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0315,
+            "ci95": [
+              0.0265,
+              0.0364
+            ]
+          },
+          "als - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0665,
+            "ci95": [
+              0.0624,
+              0.07
+            ]
+          },
+          "als - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0379,
+            "ci95": [
+              0.0325,
+              0.0433
+            ]
+          },
+          "als - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0206,
+            "ci95": [
+              0.0178,
+              0.0231
+            ]
+          },
+          "als - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0064,
+            "ci95": [
+              0.0029,
+              0.01
+            ]
+          },
+          "hybrid - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0693,
+            "ci95": [
+              0.0657,
+              0.0727
+            ]
+          },
+          "hybrid - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0395,
+            "ci95": [
+              0.0344,
+              0.0442
+            ]
+          },
+          "hybrid - als (full)": {
+            "mean_ndcg@10_diff": 0.0029,
+            "ci95": [
+              0.002,
+              0.0038
+            ]
+          },
+          "hybrid - als (cold)": {
+            "mean_ndcg@10_diff": 0.0016,
+            "ci95": [
+              -0.0009,
+              0.0038
+            ]
+          },
+          "hybrid - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0234,
+            "ci95": [
+              0.0209,
+              0.026
+            ]
+          },
+          "hybrid - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.008,
+            "ci95": [
+              0.0046,
+              0.0114
+            ]
+          },
+          "hybrid - content (full)": {
+            "mean_ndcg@10_diff": 0.0901,
+            "ci95": [
+              0.0866,
+              0.0935
+            ]
+          },
+          "hybrid - content (cold)": {
+            "mean_ndcg@10_diff": 0.0672,
+            "ci95": [
+              0.0629,
+              0.0713
+            ]
+          }
+        }
+      },
+      "seed 1": {
+        "test_results": {
+          "random": {
+            "precision@10": 0.0031,
+            "recall@10": 0.0023,
+            "ndcg@10": 0.0034,
+            "hit_rate@10": 0.0308,
+            "popularity_percentile@10": 0.4924,
+            "ild@10": 0.9959,
+            "coverage": 1.0,
+            "users_evaluated": 9841,
+            "ndcg@10_ci95": [
+              0.0029,
+              0.0038
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0626,
+            "recall@10": 0.0576,
+            "ndcg@10": 0.0792,
+            "hit_rate@10": 0.3506,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.564,
+            "coverage": 0.0292,
+            "users_evaluated": 9841,
+            "ndcg@10_ci95": [
+              0.0764,
+              0.0821
+            ]
+          },
+          "content": {
+            "precision@10": 0.0494,
+            "recall@10": 0.0457,
+            "ndcg@10": 0.0593,
+            "hit_rate@10": 0.3266,
+            "popularity_percentile@10": 0.7324,
+            "ild@10": 0.4173,
+            "coverage": 0.6426,
+            "users_evaluated": 9841,
+            "ndcg@10_ci95": [
+              0.0572,
+              0.0615
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0994,
+            "recall@10": 0.0973,
+            "ndcg@10": 0.128,
+            "hit_rate@10": 0.4905,
+            "popularity_percentile@10": 0.9852,
+            "ild@10": 0.6264,
+            "coverage": 0.2046,
+            "users_evaluated": 9841,
+            "ndcg@10_ci95": [
+              0.1245,
+              0.1317
+            ]
+          },
+          "als": {
+            "precision@10": 0.1156,
+            "recall@10": 0.113,
+            "ndcg@10": 0.147,
+            "hit_rate@10": 0.5678,
+            "popularity_percentile@10": 0.9716,
+            "ild@10": 0.721,
+            "coverage": 0.2062,
+            "users_evaluated": 9841,
+            "ndcg@10_ci95": [
+              0.1435,
+              0.1507
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.1171,
+            "recall@10": 0.1154,
+            "ndcg@10": 0.1501,
+            "hit_rate@10": 0.5706,
+            "popularity_percentile@10": 0.9758,
+            "ild@10": 0.6981,
+            "coverage": 0.2094,
+            "users_evaluated": 9841,
+            "ndcg@10_ci95": [
+              0.1465,
+              0.154
+            ]
+          }
+        },
+        "test_results_cold_start": {
+          "random": {
+            "precision@10": 0.0026,
+            "recall@10": 0.0018,
+            "ndcg@10": 0.0026,
+            "hit_rate@10": 0.0252,
+            "popularity_percentile@10": 0.4923,
+            "ild@10": 0.996,
+            "coverage": 1.0,
+            "users_evaluated": 4913,
+            "ndcg@10_ci95": [
+              0.0021,
+              0.0032
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0634,
+            "recall@10": 0.0572,
+            "ndcg@10": 0.0792,
+            "hit_rate@10": 0.3487,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.5584,
+            "coverage": 0.0266,
+            "users_evaluated": 4913,
+            "ndcg@10_ci95": [
+              0.0752,
+              0.0834
+            ]
+          },
+          "content": {
+            "precision@10": 0.0403,
+            "recall@10": 0.0389,
+            "ndcg@10": 0.0533,
+            "hit_rate@10": 0.2742,
+            "popularity_percentile@10": 0.689,
+            "ild@10": 0.4009,
+            "coverage": 0.8848,
+            "users_evaluated": 4913,
+            "ndcg@10_ci95": [
+              0.0502,
+              0.0565
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0864,
+            "recall@10": 0.0905,
+            "ndcg@10": 0.1138,
+            "hit_rate@10": 0.4769,
+            "popularity_percentile@10": 0.88,
+            "ild@10": 0.664,
+            "coverage": 0.662,
+            "users_evaluated": 4913,
+            "ndcg@10_ci95": [
+              0.109,
+              0.1183
+            ]
+          },
+          "als": {
+            "precision@10": 0.0915,
+            "recall@10": 0.0941,
+            "ndcg@10": 0.1205,
+            "hit_rate@10": 0.5023,
+            "popularity_percentile@10": 0.9584,
+            "ild@10": 0.6948,
+            "coverage": 0.23,
+            "users_evaluated": 4913,
+            "ndcg@10_ci95": [
+              0.1156,
+              0.1251
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.0918,
+            "recall@10": 0.093,
+            "ndcg@10": 0.122,
+            "hit_rate@10": 0.5089,
+            "popularity_percentile@10": 0.9419,
+            "ild@10": 0.5743,
+            "coverage": 0.3662,
+            "users_evaluated": 4913,
+            "ndcg@10_ci95": [
+              0.1172,
+              0.1265
+            ]
+          }
+        },
+        "paired_comparisons": {
+          "item_knn - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0488,
+            "ci95": [
+              0.0459,
+              0.0518
+            ]
+          },
+          "item_knn - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0345,
+            "ci95": [
+              0.0293,
+              0.0397
+            ]
+          },
+          "als - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0677,
+            "ci95": [
+              0.0643,
+              0.0713
+            ]
+          },
+          "als - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0412,
+            "ci95": [
+              0.0357,
+              0.0469
+            ]
+          },
+          "als - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0189,
+            "ci95": [
+              0.0163,
+              0.0217
+            ]
+          },
+          "als - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0067,
+            "ci95": [
+              0.0032,
+              0.0101
+            ]
+          },
+          "hybrid - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0708,
+            "ci95": [
+              0.0677,
+              0.0744
+            ]
+          },
+          "hybrid - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0428,
+            "ci95": [
+              0.0374,
+              0.0479
+            ]
+          },
+          "hybrid - als (full)": {
+            "mean_ndcg@10_diff": 0.0031,
+            "ci95": [
+              0.0021,
+              0.0041
+            ]
+          },
+          "hybrid - als (cold)": {
+            "mean_ndcg@10_diff": 0.0015,
+            "ci95": [
+              -0.0008,
+              0.004
+            ]
+          },
+          "hybrid - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.022,
+            "ci95": [
+              0.0196,
+              0.0247
+            ]
+          },
+          "hybrid - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0082,
+            "ci95": [
+              0.0047,
+              0.0118
+            ]
+          },
+          "hybrid - content (full)": {
+            "mean_ndcg@10_diff": 0.0908,
+            "ci95": [
+              0.0875,
+              0.0944
+            ]
+          },
+          "hybrid - content (cold)": {
+            "mean_ndcg@10_diff": 0.0688,
+            "ci95": [
+              0.0648,
+              0.073
+            ]
+          }
+        }
+      },
+      "seed 2": {
+        "test_results": {
+          "random": {
+            "precision@10": 0.0032,
+            "recall@10": 0.0019,
+            "ndcg@10": 0.0034,
+            "hit_rate@10": 0.0316,
+            "popularity_percentile@10": 0.4928,
+            "ild@10": 0.996,
+            "coverage": 1.0,
+            "users_evaluated": 9824,
+            "ndcg@10_ci95": [
+              0.003,
+              0.0038
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0617,
+            "recall@10": 0.0562,
+            "ndcg@10": 0.0785,
+            "hit_rate@10": 0.3445,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.563,
+            "coverage": 0.03,
+            "users_evaluated": 9824,
+            "ndcg@10_ci95": [
+              0.0759,
+              0.0814
+            ]
+          },
+          "content": {
+            "precision@10": 0.0491,
+            "recall@10": 0.0445,
+            "ndcg@10": 0.0587,
+            "hit_rate@10": 0.3218,
+            "popularity_percentile@10": 0.7326,
+            "ild@10": 0.417,
+            "coverage": 0.655,
+            "users_evaluated": 9824,
+            "ndcg@10_ci95": [
+              0.0565,
+              0.0609
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0949,
+            "recall@10": 0.0917,
+            "ndcg@10": 0.1232,
+            "hit_rate@10": 0.469,
+            "popularity_percentile@10": 0.9856,
+            "ild@10": 0.6289,
+            "coverage": 0.2146,
+            "users_evaluated": 9824,
+            "ndcg@10_ci95": [
+              0.1197,
+              0.1267
+            ]
+          },
+          "als": {
+            "precision@10": 0.1122,
+            "recall@10": 0.1088,
+            "ndcg@10": 0.1418,
+            "hit_rate@10": 0.547,
+            "popularity_percentile@10": 0.9715,
+            "ild@10": 0.723,
+            "coverage": 0.2052,
+            "users_evaluated": 9824,
+            "ndcg@10_ci95": [
+              0.1383,
+              0.1456
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.1139,
+            "recall@10": 0.1105,
+            "ndcg@10": 0.144,
+            "hit_rate@10": 0.5501,
+            "popularity_percentile@10": 0.9756,
+            "ild@10": 0.6985,
+            "coverage": 0.2138,
+            "users_evaluated": 9824,
+            "ndcg@10_ci95": [
+              0.1404,
+              0.1479
+            ]
+          }
+        },
+        "test_results_cold_start": {
+          "random": {
+            "precision@10": 0.0031,
+            "recall@10": 0.0021,
+            "ndcg@10": 0.0033,
+            "hit_rate@10": 0.0304,
+            "popularity_percentile@10": 0.4913,
+            "ild@10": 0.9958,
+            "coverage": 1.0,
+            "users_evaluated": 4904,
+            "ndcg@10_ci95": [
+              0.0027,
+              0.0039
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0625,
+            "recall@10": 0.0564,
+            "ndcg@10": 0.0794,
+            "hit_rate@10": 0.3495,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.5629,
+            "coverage": 0.0266,
+            "users_evaluated": 4904,
+            "ndcg@10_ci95": [
+              0.0752,
+              0.0834
+            ]
+          },
+          "content": {
+            "precision@10": 0.0404,
+            "recall@10": 0.0388,
+            "ndcg@10": 0.0534,
+            "hit_rate@10": 0.2763,
+            "popularity_percentile@10": 0.6861,
+            "ild@10": 0.4037,
+            "coverage": 0.8848,
+            "users_evaluated": 4904,
+            "ndcg@10_ci95": [
+              0.0504,
+              0.0567
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0852,
+            "recall@10": 0.0904,
+            "ndcg@10": 0.1142,
+            "hit_rate@10": 0.4668,
+            "popularity_percentile@10": 0.8685,
+            "ild@10": 0.6679,
+            "coverage": 0.6736,
+            "users_evaluated": 4904,
+            "ndcg@10_ci95": [
+              0.1095,
+              0.1192
+            ]
+          },
+          "als": {
+            "precision@10": 0.0889,
+            "recall@10": 0.0955,
+            "ndcg@10": 0.1186,
+            "hit_rate@10": 0.4896,
+            "popularity_percentile@10": 0.9584,
+            "ild@10": 0.6931,
+            "coverage": 0.2302,
+            "users_evaluated": 4904,
+            "ndcg@10_ci95": [
+              0.114,
+              0.1233
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.091,
+            "recall@10": 0.0938,
+            "ndcg@10": 0.1211,
+            "hit_rate@10": 0.4996,
+            "popularity_percentile@10": 0.9417,
+            "ild@10": 0.5748,
+            "coverage": 0.3772,
+            "users_evaluated": 4904,
+            "ndcg@10_ci95": [
+              0.1163,
+              0.1261
+            ]
+          }
+        },
+        "paired_comparisons": {
+          "item_knn - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0447,
+            "ci95": [
+              0.0417,
+              0.0476
+            ]
+          },
+          "item_knn - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0348,
+            "ci95": [
+              0.0299,
+              0.0398
+            ]
+          },
+          "als - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0633,
+            "ci95": [
+              0.0597,
+              0.0671
+            ]
+          },
+          "als - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0393,
+            "ci95": [
+              0.0343,
+              0.0448
+            ]
+          },
+          "als - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0186,
+            "ci95": [
+              0.0159,
+              0.0216
+            ]
+          },
+          "als - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0045,
+            "ci95": [
+              0.001,
+              0.0081
+            ]
+          },
+          "hybrid - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0654,
+            "ci95": [
+              0.0619,
+              0.069
+            ]
+          },
+          "hybrid - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0417,
+            "ci95": [
+              0.0368,
+              0.0468
+            ]
+          },
+          "hybrid - als (full)": {
+            "mean_ndcg@10_diff": 0.0021,
+            "ci95": [
+              0.0012,
+              0.003
+            ]
+          },
+          "hybrid - als (cold)": {
+            "mean_ndcg@10_diff": 0.0024,
+            "ci95": [
+              0.0001,
+              0.0049
+            ]
+          },
+          "hybrid - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0207,
+            "ci95": [
+              0.0182,
+              0.0235
+            ]
+          },
+          "hybrid - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0069,
+            "ci95": [
+              0.0033,
+              0.0105
+            ]
+          },
+          "hybrid - content (full)": {
+            "mean_ndcg@10_diff": 0.0853,
+            "ci95": [
+              0.0821,
+              0.0891
+            ]
+          },
+          "hybrid - content (cold)": {
+            "mean_ndcg@10_diff": 0.0677,
+            "ci95": [
+              0.0636,
+              0.0719
+            ]
+          }
+        }
+      },
+      "seed 3": {
+        "test_results": {
+          "random": {
+            "precision@10": 0.0028,
+            "recall@10": 0.0018,
+            "ndcg@10": 0.0031,
+            "hit_rate@10": 0.0276,
+            "popularity_percentile@10": 0.4927,
+            "ild@10": 0.9961,
+            "coverage": 1.0,
+            "users_evaluated": 9834,
+            "ndcg@10_ci95": [
+              0.0026,
+              0.0035
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0618,
+            "recall@10": 0.0551,
+            "ndcg@10": 0.0774,
+            "hit_rate@10": 0.3474,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.5659,
+            "coverage": 0.0326,
+            "users_evaluated": 9834,
+            "ndcg@10_ci95": [
+              0.0745,
+              0.0802
+            ]
+          },
+          "content": {
+            "precision@10": 0.0492,
+            "recall@10": 0.0431,
+            "ndcg@10": 0.0583,
+            "hit_rate@10": 0.3199,
+            "popularity_percentile@10": 0.7413,
+            "ild@10": 0.4186,
+            "coverage": 0.6538,
+            "users_evaluated": 9834,
+            "ndcg@10_ci95": [
+              0.0561,
+              0.0603
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0962,
+            "recall@10": 0.0895,
+            "ndcg@10": 0.1215,
+            "hit_rate@10": 0.4803,
+            "popularity_percentile@10": 0.9838,
+            "ild@10": 0.6266,
+            "coverage": 0.226,
+            "users_evaluated": 9834,
+            "ndcg@10_ci95": [
+              0.1179,
+              0.1249
+            ]
+          },
+          "als": {
+            "precision@10": 0.1127,
+            "recall@10": 0.1083,
+            "ndcg@10": 0.1424,
+            "hit_rate@10": 0.5518,
+            "popularity_percentile@10": 0.9712,
+            "ild@10": 0.722,
+            "coverage": 0.2102,
+            "users_evaluated": 9834,
+            "ndcg@10_ci95": [
+              0.1386,
+              0.1459
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.1137,
+            "recall@10": 0.1093,
+            "ndcg@10": 0.1442,
+            "hit_rate@10": 0.5551,
+            "popularity_percentile@10": 0.9757,
+            "ild@10": 0.6967,
+            "coverage": 0.216,
+            "users_evaluated": 9834,
+            "ndcg@10_ci95": [
+              0.1406,
+              0.1477
+            ]
+          }
+        },
+        "test_results_cold_start": {
+          "random": {
+            "precision@10": 0.0032,
+            "recall@10": 0.0023,
+            "ndcg@10": 0.0035,
+            "hit_rate@10": 0.0316,
+            "popularity_percentile@10": 0.4928,
+            "ild@10": 0.9958,
+            "coverage": 1.0,
+            "users_evaluated": 4905,
+            "ndcg@10_ci95": [
+              0.0029,
+              0.0042
+            ]
+          },
+          "popularity": {
+            "precision@10": 0.0624,
+            "recall@10": 0.0572,
+            "ndcg@10": 0.0791,
+            "hit_rate@10": 0.3564,
+            "popularity_percentile@10": 0.998,
+            "ild@10": 0.5696,
+            "coverage": 0.025,
+            "users_evaluated": 4905,
+            "ndcg@10_ci95": [
+              0.0753,
+              0.083
+            ]
+          },
+          "content": {
+            "precision@10": 0.0385,
+            "recall@10": 0.0371,
+            "ndcg@10": 0.0502,
+            "hit_rate@10": 0.2693,
+            "popularity_percentile@10": 0.6937,
+            "ild@10": 0.4039,
+            "coverage": 0.8778,
+            "users_evaluated": 4905,
+            "ndcg@10_ci95": [
+              0.0474,
+              0.0533
+            ]
+          },
+          "item_knn": {
+            "precision@10": 0.0831,
+            "recall@10": 0.0878,
+            "ndcg@10": 0.1091,
+            "hit_rate@10": 0.4589,
+            "popularity_percentile@10": 0.8805,
+            "ild@10": 0.668,
+            "coverage": 0.6656,
+            "users_evaluated": 4905,
+            "ndcg@10_ci95": [
+              0.1044,
+              0.1139
+            ]
+          },
+          "als": {
+            "precision@10": 0.0886,
+            "recall@10": 0.0948,
+            "ndcg@10": 0.1163,
+            "hit_rate@10": 0.4928,
+            "popularity_percentile@10": 0.9582,
+            "ild@10": 0.6936,
+            "coverage": 0.229,
+            "users_evaluated": 4905,
+            "ndcg@10_ci95": [
+              0.1113,
+              0.1209
+            ]
+          },
+          "hybrid": {
+            "precision@10": 0.0899,
+            "recall@10": 0.0926,
+            "ndcg@10": 0.1184,
+            "hit_rate@10": 0.5085,
+            "popularity_percentile@10": 0.9434,
+            "ild@10": 0.576,
+            "coverage": 0.3678,
+            "users_evaluated": 4905,
+            "ndcg@10_ci95": [
+              0.1137,
+              0.123
+            ]
+          }
+        },
+        "paired_comparisons": {
+          "item_knn - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0441,
+            "ci95": [
+              0.0409,
+              0.0469
+            ]
+          },
+          "item_knn - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.03,
+            "ci95": [
+              0.0248,
+              0.0343
+            ]
+          },
+          "als - popularity (full)": {
+            "mean_ndcg@10_diff": 0.065,
+            "ci95": [
+              0.0613,
+              0.0685
+            ]
+          },
+          "als - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0372,
+            "ci95": [
+              0.032,
+              0.0421
+            ]
+          },
+          "als - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0209,
+            "ci95": [
+              0.018,
+              0.0238
+            ]
+          },
+          "als - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0072,
+            "ci95": [
+              0.0037,
+              0.0109
+            ]
+          },
+          "hybrid - popularity (full)": {
+            "mean_ndcg@10_diff": 0.0668,
+            "ci95": [
+              0.0633,
+              0.0701
+            ]
+          },
+          "hybrid - popularity (cold)": {
+            "mean_ndcg@10_diff": 0.0392,
+            "ci95": [
+              0.0342,
+              0.0437
+            ]
+          },
+          "hybrid - als (full)": {
+            "mean_ndcg@10_diff": 0.0018,
+            "ci95": [
+              0.0009,
+              0.0028
+            ]
+          },
+          "hybrid - als (cold)": {
+            "mean_ndcg@10_diff": 0.0021,
+            "ci95": [
+              -0.0004,
+              0.0045
+            ]
+          },
+          "hybrid - item_knn (full)": {
+            "mean_ndcg@10_diff": 0.0227,
+            "ci95": [
+              0.02,
+              0.0255
+            ]
+          },
+          "hybrid - item_knn (cold)": {
+            "mean_ndcg@10_diff": 0.0093,
+            "ci95": [
+              0.006,
+              0.0129
+            ]
+          },
+          "hybrid - content (full)": {
+            "mean_ndcg@10_diff": 0.0859,
+            "ci95": [
+              0.0823,
+              0.0891
+            ]
+          },
+          "hybrid - content (cold)": {
+            "mean_ndcg@10_diff": 0.0682,
+            "ci95": [
+              0.0641,
+              0.072
+            ]
+          }
+        }
+      }
+    },
+    "overlap_with_main": {
+      "seed 1": "6.6%",
+      "seed 2": "6.2%",
+      "seed 3": "6.3%"
+    }
+  },
+  "global_time_split": {
+    "cutoff": 1465188254,
+    "interactions": {
+      "train": 1160129,
+      "test": 290033
+    },
+    "users": {
+      "with_test_likes": 1978,
+      "evaluated": 399,
+      "new_after_cutoff": 1579
+    },
+    "test_likes_on_items_without_training_likes": 0.1852,
+    "test_results": {
+      "random": {
+        "precision@10": 0.0083,
+        "recall@10": 0.0016,
+        "ndcg@10": 0.0082,
+        "hit_rate@10": 0.0677,
+        "popularity_percentile@10": 0.4837,
+        "ild@10": 0.998,
+        "coverage": 0.541,
+        "users_evaluated": 399,
+        "ndcg@10_ci95": [
+          0.005,
+          0.0116
+        ]
+      },
+      "popularity": {
+        "precision@10": 0.0822,
+        "recall@10": 0.0316,
+        "ndcg@10": 0.0965,
+        "hit_rate@10": 0.3534,
+        "popularity_percentile@10": 0.9956,
+        "ild@10": 0.6305,
+        "coverage": 0.0292,
+        "users_evaluated": 399,
+        "ndcg@10_ci95": [
+          0.0796,
+          0.115
+        ]
+      },
+      "content": {
+        "precision@10": 0.118,
+        "recall@10": 0.0501,
+        "ndcg@10": 0.1248,
+        "hit_rate@10": 0.5539,
+        "popularity_percentile@10": 0.4175,
+        "ild@10": 0.3929,
+        "coverage": 0.1448,
+        "users_evaluated": 399,
+        "ndcg@10_ci95": [
+          0.1083,
+          0.1412
+        ]
+      },
+      "item_knn": {
+        "precision@10": 0.1143,
+        "recall@10": 0.0442,
+        "ndcg@10": 0.1284,
+        "hit_rate@10": 0.4687,
+        "popularity_percentile@10": 0.9784,
+        "ild@10": 0.6203,
+        "coverage": 0.059,
+        "users_evaluated": 399,
+        "ndcg@10_ci95": [
+          0.1099,
+          0.1483
+        ]
+      },
+      "als": {
+        "precision@10": 0.1461,
+        "recall@10": 0.0518,
+        "ndcg@10": 0.1627,
+        "hit_rate@10": 0.5439,
+        "popularity_percentile@10": 0.9544,
+        "ild@10": 0.699,
+        "coverage": 0.1302,
+        "users_evaluated": 399,
+        "ndcg@10_ci95": [
+          0.1416,
+          0.1835
+        ]
+      },
+      "hybrid": {
+        "precision@10": 0.1424,
+        "recall@10": 0.0469,
+        "ndcg@10": 0.1602,
+        "hit_rate@10": 0.5288,
+        "popularity_percentile@10": 0.9606,
+        "ild@10": 0.6863,
+        "coverage": 0.1228,
+        "users_evaluated": 399,
+        "ndcg@10_ci95": [
+          0.1388,
+          0.1811
+        ]
+      }
+    },
+    "paired_comparisons": {
+      "item_knn - popularity (global)": {
+        "mean_ndcg@10_diff": 0.0319,
+        "ci95": [
+          0.0183,
+          0.046
+        ]
+      },
+      "als - popularity (global)": {
+        "mean_ndcg@10_diff": 0.0662,
+        "ci95": [
+          0.0483,
+          0.0845
+        ]
+      },
+      "als - item_knn (global)": {
+        "mean_ndcg@10_diff": 0.0343,
+        "ci95": [
+          0.02,
+          0.0481
+        ]
+      },
+      "hybrid - popularity (global)": {
+        "mean_ndcg@10_diff": 0.0637,
+        "ci95": [
+          0.0466,
+          0.0821
+        ]
+      },
+      "hybrid - als (global)": {
+        "mean_ndcg@10_diff": -0.0025,
+        "ci95": [
+          -0.0073,
+          0.0023
+        ]
+      },
+      "hybrid - item_knn (global)": {
+        "mean_ndcg@10_diff": 0.0318,
+        "ci95": [
+          0.0183,
+          0.046
+        ]
+      },
+      "hybrid - content (global)": {
+        "mean_ndcg@10_diff": 0.0354,
+        "ci95": [
+          0.0149,
+          0.0546
+        ]
+      }
+    },
+    "cutoff_date": "2016-06-06"
+  },
+  "runtime_seconds": 216.4
+}

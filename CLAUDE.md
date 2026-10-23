@@ -18,6 +18,7 @@ python manage.py prepare_data            # download (md5-checked) + stream -> da
 python manage.py load_catalog            # idempotent upsert into the DB
 python manage.py evaluate_recommenders   # tune on validation, score test once -> reports/evaluation.{json,md}
 python manage.py train_recommender       # fit on all data with the selected params -> data/models/<version>/, LATEST
+python manage.py robustness_check        # selected params on 3 more user samples + a global time split -> reports/robustness.*
 python manage.py runserver
 pip install -r requirements-notebooks.txt  # then run notebooks/01_eda_and_results.ipynb (writes reports/figures/)
 
@@ -60,5 +61,6 @@ ruff check system/
 - Watchlist, feedback and logging foreign keys to `Movie` are `PROTECT`, and `load_catalog` never deletes movies.
 - Changing the catalog size or seed changes item indices. After `prepare_data`, always rerun `load_catalog` and
   `train_recommender`.
-- Known evaluation caveats: the Tag Genome and the catalog selection use all ratings, including the test period, and
-  there is no global time cut.
+- Known evaluation caveats: the Tag Genome and the catalog selection use all ratings, including the test period.
+  The main split is per user; `robustness_check` adds a global time cut. After `evaluate_recommenders` changes the
+  selected params, rerun `robustness_check`.

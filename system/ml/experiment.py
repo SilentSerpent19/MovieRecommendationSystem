@@ -74,6 +74,7 @@ def make_fold(ds: Dataset, history_mask: np.ndarray, target_mask: np.ndarray, us
         keep = np.zeros(ds.n_users, bool)
         keep[users] = True
         relevant = relevant.multiply(keep[:, None]).tocsr()
+        relevant.eliminate_zeros()  # multiply() keeps masked entries as explicit zeros, which still count as relevant
     return Fold(train, seen, relevant, np.asarray(train.sum(axis=0)).ravel(), order)
 
 
@@ -81,11 +82,68 @@ def _eval(model, fold: Fold, k: int, per_user: bool = False, **kwargs) -> dict:
     return evaluate(model, fold.train, fold.seen, fold.relevant, fold.popularity, k=k, per_user=per_user, **kwargs)
 
 
+# Paired NDCG differences reported for every test evaluation, as (model a, model b): a - b.
+COMPARISONS = (('item_knn', 'popularity'), ('als', 'popularity'), ('als', 'item_knn'), ('hybrid', 'popularity'),
+               ('hybrid', 'als'), ('hybrid', 'item_knn'), ('hybrid', 'content'))
+
+
+def sample_eval_users(n_users: int, cfg: ExperimentConfig) -> tuple[np.ndarray, np.ndarray]:
+    """Seeded (tuning users, cold-start users). Drawn in this order so every caller gets the same sets."""
+    rng = np.random.default_rng(cfg.seed)
+    tune_users = rng.choice(n_users, size=min(cfg.tuning_users, n_users), replace=False)
+    cold_users = rng.choice(n_users, size=int(cfg.cold_start_fraction * n_users), replace=False)
+    return tune_users, cold_users
+
+
+def final_models(selected: dict, seed: int) -> list:
+    """Fresh, unfitted instances of every compared model with the hyperparameters in `selected`
+    (the report's 'selected_params')."""
+    def als():
+        return ALSModel(**selected['als'], seed=seed)
+
+    def content():
+        return ContentModel(selected['content']['n_components'], seed=seed)
+
+    return [
+        RandomModel(seed=seed),
+        PopularityModel(),
+        content(),
+        ItemKNNModel(**selected['item_knn']),
+        als(),
+        HybridModel(als(), content(), PopularityModel(), **selected['hybrid']),
+    ]
+
+
+def test_models(ds: Dataset, folds: dict, selected: dict, cfg: ExperimentConfig,
+                embeddings: np.ndarray) -> tuple[dict, dict]:
+    """Fit every final model on each named fold and score it once, with bootstrap CIs and paired differences.
+
+    Returns ({fold name: {model: metrics}}, {'a - b (fold name)': paired NDCG difference}).
+    """
+    results, per_user = {}, {}
+    for setting, fold in folds.items():
+        results[setting] = {}
+        for m in final_models(selected, cfg.seed):
+            m.fit(fold.train, ds.genome)  # cold fold: models never see the cold users' truncated history
+            r = _eval(m, fold, cfg.k, per_user=True, embeddings=embeddings)
+            per_user[(m.name, setting)] = r.pop('_ndcg')
+            r[f'ndcg@{cfg.k}_ci95'] = bootstrap_ci(per_user[(m.name, setting)], seed=cfg.seed)
+            results[setting][m.name] = r
+            log.info('%s (%s): ndcg %s', m.name, setting, r[f'ndcg@{cfg.k}'])
+    comparisons = {}
+    for a, b in COMPARISONS:
+        for setting in folds:
+            diff = per_user[(a, setting)] - per_user[(b, setting)]
+            comparisons[f'{a} - {b} ({setting})'] = {
+                f'mean_ndcg@{cfg.k}_diff': round(float(diff.mean()), 4),
+                'ci95': bootstrap_ci(diff, seed=cfg.seed)}
+    return results, comparisons
+
+
 def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     t0 = time.time()
     folds = temporal_split(ds.users, ds.timestamps, cfg.val_frac, cfg.test_frac)
-    rng = np.random.default_rng(cfg.seed)
-    tune_users = rng.choice(ds.n_users, size=min(cfg.tuning_users, ds.n_users), replace=False)
+    tune_users, cold_users = sample_eval_users(ds.n_users, cfg)
     val = make_fold(ds, folds == 0, folds == 1, users=tune_users)
     tuning = {}
 
@@ -124,7 +182,6 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     tuning['als'] = [{'factors': p[0], 'alpha': p[1], 'reg': p[2], **r} for p, r in als_results.items()]
 
     log.info('Tuning hybrid blend (objective: mean of full-history and cold-start validation NDCG)')
-    cold_users = rng.choice(ds.n_users, size=int(cfg.cold_start_fraction * ds.n_users), replace=False)
     val_cold = val.cold_start(np.intersect1d(cold_users, tune_users), cfg.cold_start_history)
     fitted = {}
     for name, fold in (('full', val), ('cold', val_cold)):
@@ -151,41 +208,21 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     eligible = [r for r in sweep_val if r[f'ndcg@{cfg.k}'] >= (1 - cfg.max_ndcg_loss) * base_ndcg]
     best_diversity = max(eligible, key=lambda r: r['diversity'])['diversity']
 
+    selected = {
+        'item_knn': {'k': best_knn[0], 'shrink': best_knn[1]},
+        'content': {'n_components': best_content},
+        'als': {'factors': best_als[0], 'alpha': best_als[1], 'reg': best_als[2]},
+        'hybrid': {'history_prior': best_hybrid[0], 'popularity_weight': best_hybrid[1]},
+        'diversity': best_diversity,
+    }
+
     log.info('Final evaluation on the test fold')
     test = make_fold(ds, folds <= 1, folds == 2)
-    def final_models():
-        return [
-            RandomModel(seed=cfg.seed),
-            PopularityModel(),
-            ContentModel(best_content, seed=cfg.seed),
-            ItemKNNModel(*best_knn),
-            make_als(),
-            HybridModel(make_als(), ContentModel(best_content, seed=cfg.seed), PopularityModel(),
-                        history_prior=best_hybrid[0], popularity_weight=best_hybrid[1]),
-        ]
-
     test_cold = test.cold_start(cold_users, cfg.cold_start_history)
-    results, cold_results, per_user = {}, {}, {}
-    for name, fold, out in (('full', test, results), ('cold', test_cold, cold_results)):
-        for m in final_models():
-            m.fit(fold.train, ds.genome)  # cold fold: models never see the cold users' truncated history
-            r = _eval(m, fold, cfg.k, per_user=True, embeddings=embeddings)
-            per_user[(m.name, name)] = r.pop('_ndcg')
-            r[f'ndcg@{cfg.k}_ci95'] = bootstrap_ci(per_user[(m.name, name)], seed=cfg.seed)
-            out[m.name] = r
-            log.info('%s (%s): ndcg %s', m.name, name, r[f'ndcg@{cfg.k}'])
-    comparisons = {}
-    for a, b in (('item_knn', 'popularity'), ('als', 'popularity'), ('als', 'item_knn'),
-                 ('hybrid', 'popularity'), ('hybrid', 'als'), ('hybrid', 'item_knn'),
-                 ('hybrid', 'content')):
-        for setting in ('full', 'cold'):
-            diff = per_user[(a, setting)] - per_user[(b, setting)]
-            comparisons[f'{a} - {b} ({setting})'] = {
-                f'mean_ndcg@{cfg.k}_diff': round(float(diff.mean()), 4),
-                'ci95': bootstrap_ci(diff, seed=cfg.seed)}
+    results, comparisons = test_models(ds, {'full': test, 'cold': test_cold}, selected, cfg, embeddings)
 
     log.info('Diversity curve on test (served hybrid, full history)')
-    served = next(m for m in final_models() if m.name == 'hybrid').fit(test.train, ds.genome)
+    served = next(m for m in final_models(selected, cfg.seed) if m.name == 'hybrid').fit(test.train, ds.genome)
     diversity_test = []
     for d in cfg.diversity:
         r = _eval(served, test, cfg.k, per_user=d in (0.0, best_diversity), embeddings=embeddings, diversity=d)
@@ -204,15 +241,9 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             'ties': 'interactions sharing the boundary timestamp all go to the later fold',
             'interactions_per_fold': split_sizes,
         },
-        'selected_params': {
-            'item_knn': {'k': best_knn[0], 'shrink': best_knn[1]},
-            'content': {'n_components': best_content},
-            'als': {'factors': best_als[0], 'alpha': best_als[1], 'reg': best_als[2]},
-            'hybrid': {'history_prior': best_hybrid[0], 'popularity_weight': best_hybrid[1]},
-            'diversity': best_diversity,
-        },
-        'test_results': results,
-        'test_results_cold_start': cold_results,
+        'selected_params': selected,
+        'test_results': results['full'],
+        'test_results_cold_start': results['cold'],
         'paired_comparisons': comparisons,
         'diversity': {
             'rule': (f'largest MMR diversity whose validation ndcg@{cfg.k} is within '
