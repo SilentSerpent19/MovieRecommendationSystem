@@ -195,17 +195,43 @@ Typical response time is 3–7 ms per request once the model is loaded.
 
 ## Quickstart
 
+From a fresh clone to a running app with one script. It needs about 10–15 minutes and ~1 GB of disk, and it downloads
+~270 MB of MovieLens and IMDb data once.
+
+```bash
+# 0. Only if you don't have uv yet (it installs Python 3.12 for you):
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 1. Get the code and build everything
+git clone https://github.com/SilentSerpent19/MovieRecommendationSystem.git
+cd MovieRecommendationSystem
+./setup.sh                 # venv -> database -> download + prepare data -> load catalog -> train model -> tests
+
+# 2. Run the app
+source venv/bin/activate
+python manage.py runserver # open http://127.0.0.1:8000 and register a user
+```
+
+`./setup.sh --with-eval` also regenerates `reports/` (the evaluation and robustness checks, about 10 minutes more).
+The committed reports are already up to date, so you only need this after changing the ML code.
+
+<details>
+<summary>The same steps by hand</summary>
+
 ```bash
 uv venv --python 3.12 venv && source venv/bin/activate      # or: python3.12 -m venv venv
-pip install -r requirements-dev.txt
+uv pip install -r requirements-notebooks.txt                # app + tests + notebook (or: pip install -r ...)
 python manage.py migrate
-python manage.py prepare_data            # downloads ~270 MB on first run, then builds data/processed/
+python manage.py prepare_data            # downloads ~270 MB on first run (md5-checked), then builds data/processed/
 python manage.py load_catalog
 python manage.py evaluate_recommenders   # optional: regenerates reports/
+python manage.py robustness_check        # optional: regenerates reports/robustness.*
 python manage.py train_recommender       # uses the hyperparameters selected by the evaluation
-python manage.py createsuperuser         # staff users can open /analytics/
+python manage.py createsuperuser         # optional: staff users can open /analytics/
 python manage.py runserver
 ```
+
+</details>
 
 To rerun the notebook, install `requirements-notebooks.txt` and open `notebooks/01_eda_and_results.ipynb`.
 It reads only `data/processed/` and `reports/`, and runs in about 10 seconds.

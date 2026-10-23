@@ -44,6 +44,7 @@ def run(cfg: DataConfig) -> dict:
     t0 = time.time()
     out = cfg.processed_dir
     out.mkdir(parents=True, exist_ok=True)
+    sources.use_system_certificates()
     ml_zip = sources.ensure_downloaded(sources.MOVIELENS_25M, cfg.raw_dir)
     imdb_path = sources.ensure_downloaded(sources.IMDB_RATINGS, cfg.raw_dir)
 
