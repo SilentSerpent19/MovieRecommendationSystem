@@ -19,6 +19,7 @@ python manage.py load_catalog            # idempotent upsert into the DB
 python manage.py evaluate_recommenders   # tune on validation, score test once -> reports/evaluation.{json,md}
 python manage.py train_recommender       # fit on all data with the selected params -> data/models/<version>/, LATEST
 python manage.py runserver
+pip install -r requirements-notebooks.txt  # then run notebooks/01_eda_and_results.ipynb (writes reports/figures/)
 
 pytest                                   # all tests; none need downloads
 pytest system/tests/test_recommender.py::test_filters_restrict_candidates   # single test
@@ -51,7 +52,8 @@ ruff check system/
 
 ## Conventions and pitfalls
 
-- After changing anything in `system/ml/`, rerun `evaluate_recommenders` and commit the updated `reports/`. Claims in
+- After changing anything in `system/ml/`, rerun `evaluate_recommenders` and commit the updated `reports/`. Then
+  re-execute the notebook so its outputs and `reports/figures/` match. Claims in
   the README must match `reports/evaluation.md`.
 - `data/` is git-ignored except `data/README.md`. The MovieLens and IMDb licences forbid redistribution and
   commercial use.
