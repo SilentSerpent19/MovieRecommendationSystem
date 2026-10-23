@@ -40,6 +40,16 @@ def md5sum(path: Path, block: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
+def use_system_certificates() -> None:
+    """Verify HTTPS against the operating system's trust store instead of certifi's bundle.
+
+    files.grouplens.org chains to a root CA (emSign) that macOS and Windows trust but certifi does not ship,
+    so plain `requests` fails with CERTIFICATE_VERIFY_FAILED where curl and browsers succeed.
+    """
+    import truststore
+    truststore.inject_into_ssl()
+
+
 def ensure_downloaded(source: Source, raw_dir: Path) -> Path:
     """Download `source` into raw_dir unless already present; verify its checksum when one is known."""
     raw_dir.mkdir(parents=True, exist_ok=True)
