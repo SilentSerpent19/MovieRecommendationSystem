@@ -185,3 +185,26 @@ def test_als_learns_block_structure_and_handles_empty_history():
     assert scores[2:5].mean() > scores[5:].mean()  # unseen items from the user's block score higher
     assert 2 <= np.argmax(scores[2:]) + 2 <= 4
     assert not model.score(sp.csr_matrix((1, 10))).any()
+
+
+def test_artifacts_round_trip_with_als(tmp_path, X, genome):
+    from system.ml.models import ALSModel
+    model = HybridModel(ALSModel(factors=4, alpha=2.0, reg=3.0, iterations=3), ContentModel(n_components=4),
+                        PopularityModel(), history_prior=2.0).fit(X, genome)
+    artifacts.save(model, np.arange(12), tmp_path, 'v-als', {}, diversity=0.4)
+    loaded, _, meta = artifacts.load(tmp_path, 'v-als')
+    assert isinstance(loaded.cf, ALSModel) and meta['params']['cf'] == 'als'
+    assert (loaded.cf.factors, loaded.cf.alpha, loaded.cf.reg) == (4, 2.0, 3.0)
+    np.testing.assert_allclose(loaded.score(X[:5]), model.score(X[:5]), rtol=1e-5)
+
+
+def test_artifacts_without_cf_key_load_as_item_knn(tmp_path, X, genome):
+    import json
+    model = HybridModel(ItemKNNModel(k=4), ContentModel(n_components=4), PopularityModel()).fit(X, genome)
+    artifacts.save(model, np.arange(12), tmp_path, 'old', {})
+    meta_path = tmp_path / 'old' / 'meta.json'
+    meta = json.loads(meta_path.read_text())
+    del meta['params']['cf']  # artifacts written before ALS existed
+    meta_path.write_text(json.dumps(meta))
+    loaded, _, _ = artifacts.load(tmp_path, 'old')
+    assert isinstance(loaded.cf, ItemKNNModel)

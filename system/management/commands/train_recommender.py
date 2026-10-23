@@ -8,9 +8,9 @@ from django.core.management.base import BaseCommand
 
 from system.ml import artifacts
 from system.ml.data import POSITIVE_THRESHOLD, interaction_matrix, load_dataset
-from system.ml.models import ContentModel, HybridModel, ItemKNNModel, PopularityModel
+from system.ml.models import ALSModel, ContentModel, HybridModel, PopularityModel
 
-DEFAULT_PARAMS = {'item_knn': {'k': 200, 'shrink': 0.0}, 'content': {'n_components': 128},
+DEFAULT_PARAMS = {'als': {'factors': 64, 'alpha': 2.0, 'reg': 30.0}, 'content': {'n_components': 128},
                   'hybrid': {'history_prior': 10.0, 'popularity_weight': 0.0}}
 
 
@@ -30,7 +30,7 @@ class Command(BaseCommand):
         pos = ds.ratings >= POSITIVE_THRESHOLD
         X = interaction_matrix(ds.users[pos], ds.items[pos], ds.n_users, ds.n_items)
         model = HybridModel(
-            ItemKNNModel(**params['item_knn']),
+            ALSModel(**params['als'], seed=42),
             ContentModel(n_components=params['content']['n_components'], seed=42),
             PopularityModel(),
             **params['hybrid'],
@@ -41,7 +41,7 @@ class Command(BaseCommand):
             'trained_at': datetime.now(UTC).isoformat(timespec='seconds'),
             'data_created_at': ds.manifest.get('created_at'),
             'n_users': ds.n_users, 'n_items': ds.n_items, 'n_positive_interactions': int(X.nnz),
-            'similarity_nnz': int(model.knn.similarity.nnz),
+            'collaborative_model': 'als',
             'params_source': 'reports/evaluation.json' if report else 'defaults',
             # Offline metrics come from the same configuration refit on train+validation and scored on the
             # held-out test period; this artifact is then refit on all interactions, so it has no test score.
@@ -55,5 +55,5 @@ class Command(BaseCommand):
                              diversity=params.get('diversity', 0.3))
         size_mb = sum(f.stat().st_size for f in out.iterdir()) / 1e6
         self.stdout.write(self.style.SUCCESS(
-            f'Saved model {version} to {out} ({size_mb:.1f} MB, {model.knn.similarity.nnz} similarity entries, '
+            f'Saved model {version} to {out} ({size_mb:.1f} MB, ALS {model.cf.item_factors.shape} item factors, '
             f'{int(np.count_nonzero(model.popularity.popularity))} items with likes).'))

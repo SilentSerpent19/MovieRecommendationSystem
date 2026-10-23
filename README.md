@@ -3,7 +3,7 @@
 [![CI](https://github.com/SilentSerpent19/MovieRecommendationSystem/actions/workflows/ci.yml/badge.svg)](https://github.com/SilentSerpent19/MovieRecommendationSystem/actions/workflows/ci.yml)
 
 A Django web app backed by a small, reproducible recommender-systems pipeline built on **MovieLens 25M**.
-Users filter by genre, era, IMDb rating and mood. A hybrid model (item-kNN collaborative filtering plus
+Users filter by genre, era, IMDb rating and mood. A hybrid model (ALS matrix factorisation plus
 Tag Genome content similarity) ranks the matches using what each user has liked or saved, and explains every pick.
 
 The project is sized for a laptop: each pipeline step finishes in under 5 minutes, with a peak of about 500 MB of RAM.
@@ -19,8 +19,8 @@ and confidence intervals, is in [`reports/evaluation.md`](reports/evaluation.md)
 | popularity | 0.079 [0.076, 0.082] | 0.057 | 0.35 | 0.03 | 0.079 [0.075, 0.083] |
 | content (Tag Genome) | 0.058 [0.056, 0.060] | 0.045 | 0.32 | 0.65 | 0.051 [0.048, 0.055] |
 | item-kNN | 0.125 [0.122, 0.129] | 0.094 | 0.48 | 0.21 | 0.114 [0.109, 0.119] |
-| **ALS (matrix factorisation)** | **0.146** [0.142, 0.149] | **0.113** | **0.56** | 0.22 | **0.117** [0.113, 0.122] |
-| hybrid (served: item-kNN + content) | 0.127 [0.123, 0.130] | 0.096 | 0.49 | 0.23 | 0.115 [0.110, 0.120] |
+| ALS (matrix factorisation) | 0.146 [0.142, 0.149] | 0.113 | 0.56 | 0.22 | 0.117 [0.112, 0.122] |
+| **hybrid (served: ALS + content)** | **0.148** [0.145, 0.152] | **0.115** | **0.56** | 0.22 | **0.119** [0.114, 0.123] |
 
 "Cold start" means half of the users (4,912 evaluated) have their training history cut to their 3 most recent likes
 *before* the models are fit, which mirrors a new user of the app.
@@ -29,14 +29,12 @@ What the numbers say:
 
 - **Collaborative filtering clearly beats popularity.** Item-kNN adds +0.046 NDCG with full histories
   (paired bootstrap 95% CI [+0.043, +0.049]) and +0.035 with only 3 likes ([+0.030, +0.040]).
-- **ALS is the most accurate model.** Implicit-feedback matrix factorisation (64 factors, alpha 2, reg 30; every
+- **ALS is the strongest single model.** Implicit-feedback matrix factorisation (64 factors, alpha 2, reg 30; every
   tuned value is inside the grid) beats item-kNN by +0.020 NDCG (+16%, paired CI [+0.017, +0.023]). Its lists are
   also more varied (ILD 0.72 vs 0.63). At cold start it ties with item-kNN (+0.003, CI [−0.001, +0.006]).
-  The served hybrid still uses item-kNN; swapping in ALS is the next step.
-- **The hybrid adds no meaningful accuracy over item-kNN.** The gain is +0.001 NDCG: statistically detectable with
-  full histories, and not significant at cold start (CI [-0.001, +0.003]). It is served because it covers more of the
-  catalog (0.67 vs 0.64 at cold start), recommends slightly less mainstream titles, and has a content-based answer
-  for items with thin collaborative signal. It is not served for an accuracy gain.
+- **The served hybrid (ALS + content) is the best model overall.** It adds a small but significant +0.003 NDCG over
+  ALS alone (CI [+0.002, +0.004]) and +0.023 over the earlier item-kNN hybrid (+18%). At cold start the content
+  part lifts catalog coverage from 0.23 (ALS alone) to 0.39 while matching ALS on accuracy.
 - **Content similarity alone is less accurate than popularity but far more diverse.** It recommends 65–88% of the
   catalog, against 3% for popularity. This is the usual accuracy versus coverage trade-off.
 
@@ -49,10 +47,12 @@ the 10 movies. The table shows test results.
 
 | MMR diversity | NDCG@10 | ILD@10 |
 |---|---|---|
-| 0.0 (no re-ranking) | 0.127 | 0.62 |
-| 0.2 | 0.127 | 0.66 |
-| **0.4 (served)** | **0.122** (−3.7%) | **0.73** (+18%) |
-| 0.7 | 0.096 (−24%) | 0.90 |
+| 0.0 (no re-ranking) | 0.148 | 0.70 |
+| 0.2 | 0.147 | 0.73 |
+| **0.4 (served)** | **0.141** (−5.1%) | **0.80** (+14%) |
+| 0.7 | 0.104 (−30%) | 0.96 |
+
+0.4 met the 5% budget on validation; on test the cost is 5.1%.
 
 Light re-ranking adds diversity at no cost to accuracy. Beyond about 0.4 the accuracy drops quickly. MMR barely
 changes catalog coverage, because it only reorders each user's own top 200; broader coverage needs a different model.
@@ -88,7 +88,7 @@ data-quality report: what was dropped and why, missing values, rating distributi
 prepare_data          ──► data/processed/   catalog.csv, genome.npy, mood_scores.npy, interactions.npz, manifest.json
 load_catalog          ──► database          idempotent upsert of Movie, Genre, Mood, MovieMood
 evaluate_recommenders ──► reports/          evaluation.json + evaluation.md
-train_recommender     ──► data/models/<version>/   7 MB: sparse similarity, embeddings, popularity, meta.json
+train_recommender     ──► data/models/<version>/   4 MB: ALS item factors, genome embeddings, popularity, meta.json
 web / API / emails    ──► system/recommender.py
 ```
 
@@ -128,7 +128,7 @@ Typical response time is 3–7 ms per request once the model is loaded.
   are kept as a sparse matrix, so the 5,000 × 5,000 dense similarity matrix is never built.
 - **Content model:** the Tag Genome is standardised and reduced with TruncatedSVD (128 dimensions). A user's profile
   is the sum of the embeddings of the movies they liked.
-- **Hybrid:** row-normalised kNN and content scores are blended with weight `n / (n + prior)`, where `n` is the
+- **Hybrid:** row-normalised ALS and content scores are blended with weight `n / (n + prior)`, where `n` is the
   user's history size. The blend is tuned on the mean of full-history and cold-start validation NDCG.
 - **Resource budget, measured on an 8 GB M1:**
 

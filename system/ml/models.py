@@ -159,29 +159,29 @@ def _minmax_rows(s: np.ndarray) -> np.ndarray:
 
 
 class HybridModel:
-    """Blend of item-kNN, content and popularity.
+    """Blend of a collaborative model (ALS or item-kNN), content similarity and popularity.
 
     The collaborative weight grows with history size, n / (n + history_prior): users with a long
-    history lean on item-kNN, users with one or two liked movies lean on content similarity.
+    history lean on collaborative filtering, users with one or two liked movies lean on content similarity.
     """
 
     name = 'hybrid'
 
-    def __init__(self, knn: ItemKNNModel, content: ContentModel, popularity: PopularityModel,
+    def __init__(self, cf: 'ALSModel | ItemKNNModel', content: ContentModel, popularity: PopularityModel,
                  history_prior: float = 10.0, popularity_weight: float = 0.1):
-        self.knn, self.content, self.popularity = knn, content, popularity
+        self.cf, self.content, self.popularity = cf, content, popularity
         self.history_prior = history_prior
         self.popularity_weight = popularity_weight
 
     def fit(self, X: sp.csr_matrix, genome: np.ndarray):
-        for m in (self.knn, self.content, self.popularity):
+        for m in (self.cf, self.content, self.popularity):
             m.fit(X, genome)
         return self
 
     def score(self, X_users: sp.csr_matrix) -> np.ndarray:
         n = np.asarray(X_users.sum(axis=1), dtype=np.float32)
         alpha = n / (n + self.history_prior)
-        personal = alpha * _minmax_rows(self.knn.score(X_users)) + (1 - alpha) * _minmax_rows(
+        personal = alpha * _minmax_rows(self.cf.score(X_users)) + (1 - alpha) * _minmax_rows(
             self.content.score(X_users))
         pop = _minmax_rows(self.popularity.score(X_users))
         blended = (1 - self.popularity_weight) * personal + self.popularity_weight * pop

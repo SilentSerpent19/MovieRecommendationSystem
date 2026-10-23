@@ -118,6 +118,9 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             m = ALSModel(factors=f_best, alpha=a_best, reg=reg, seed=cfg.seed).fit(val.train, ds.genome)
             als_results[(f_best, a_best, reg)] = _eval(m, val, cfg.k)
     best_als = max(als_results, key=lambda p: als_results[p][f'ndcg@{cfg.k}'])
+
+    def make_als():  # best_als is (factors, alpha, reg); pass by keyword so the order can't be mixed up
+        return ALSModel(factors=best_als[0], alpha=best_als[1], reg=best_als[2], seed=cfg.seed)
     tuning['als'] = [{'factors': p[0], 'alpha': p[1], 'reg': p[2], **r} for p, r in als_results.items()]
 
     log.info('Tuning hybrid blend (objective: mean of full-history and cold-start validation NDCG)')
@@ -125,7 +128,7 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
     val_cold = val.cold_start(np.intersect1d(cold_users, tune_users), cfg.cold_start_history)
     fitted = {}
     for name, fold in (('full', val), ('cold', val_cold)):
-        fitted[name] = (ItemKNNModel(*best_knn).fit(fold.train, ds.genome),
+        fitted[name] = (make_als().fit(fold.train, ds.genome),
                         ContentModel(best_content, seed=cfg.seed).fit(fold.train, ds.genome),
                         PopularityModel().fit(fold.train, ds.genome))
     hybrid_results = {}
@@ -156,8 +159,8 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             PopularityModel(),
             ContentModel(best_content, seed=cfg.seed),
             ItemKNNModel(*best_knn),
-            ALSModel(factors=best_als[0], alpha=best_als[1], reg=best_als[2], seed=cfg.seed),
-            HybridModel(ItemKNNModel(*best_knn), ContentModel(best_content, seed=cfg.seed), PopularityModel(),
+            make_als(),
+            HybridModel(make_als(), ContentModel(best_content, seed=cfg.seed), PopularityModel(),
                         history_prior=best_hybrid[0], popularity_weight=best_hybrid[1]),
         ]
 
@@ -173,7 +176,7 @@ def run(ds: Dataset, cfg: ExperimentConfig) -> dict:
             log.info('%s (%s): ndcg %s', m.name, name, r[f'ndcg@{cfg.k}'])
     comparisons = {}
     for a, b in (('item_knn', 'popularity'), ('als', 'popularity'), ('als', 'item_knn'),
-                 ('hybrid', 'popularity'), ('hybrid', 'item_knn'),
+                 ('hybrid', 'popularity'), ('hybrid', 'als'), ('hybrid', 'item_knn'),
                  ('hybrid', 'content')):
         for setting in ('full', 'cold'):
             diff = per_user[(a, setting)] - per_user[(b, setting)]

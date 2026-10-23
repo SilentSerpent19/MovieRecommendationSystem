@@ -32,7 +32,8 @@ ruff check system/
   - `prepare.py` orchestrates `movielens.py` (streaming zip readers), `moods.py` and `enrich.py`.
     Its outputs are index-aligned: row *i* of `catalog.csv` is item *i* in every `.npy` array and model artifact.
   - `models.py`: every model has `fit(X_users×items CSR of positives, genome)` and `score(X_users) -> dense batch×items`.
-    The hybrid min-max-normalises item-kNN and content scores per row and blends them with weight `n/(n+history_prior)`.
+    The hybrid min-max-normalises its collaborative part (ALS when served; item-kNN also supported) and content scores
+    per row and blends them with weight `n/(n+history_prior)`. Artifacts record which CF model they hold (`params.cf`).
   - `experiment.py`: per-user chronological 70/10/20 split (ties at the boundary go to the later fold).
     Hyperparameters are chosen on validation. Cold start is evaluated *leak-free*: cold users are truncated to 3
     likes inside the training matrix before fitting.
